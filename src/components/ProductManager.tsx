@@ -2524,109 +2524,175 @@ export default function ProductManager({
                       </div>
                     </div>
 
-                    {((productType || '').toLowerCase().includes('book') || (category || '').toLowerCase() === 'book') && (
-                      <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                        <h5 className="text-xs font-bold text-emerald-800 mb-3 flex items-center gap-1.5">
-                          <BookOpen className="h-4 w-4" />
-                          book / Publication information
-                        </h5>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">Writer / Authorthe writer *</label>
-                            <input type="text" placeholder="Eg: Noor Mohammad Dewan" value={primaryAuthor} onChange={(e) => setPrimaryAuthor(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs" />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">Print TypePrint type</label>
-                            <input type="text" placeholder="Eg: news print" value={printType} onChange={(e) => setPrintType(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs" />
-                          </div>
-                        </div>
+                    {/* PDF Sample / Read Book Section (Optional for Books or any Product) */}
+                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 mt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input 
+                            type="checkbox" 
+                            checked={Boolean(samplePdfUrlState || samplePages.length > 0)}
+                            onChange={(e) => {
+                              if (!e.target.checked) {
+                                setSamplePdfUrlState('');
+                                setSamplePages([]);
+                              } else {
+                                setSamplePdfUrlState(samplePdfUrlState || 'enabled');
+                              }
+                            }}
+                            className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                          />
+                          <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            <BookOpen className="h-4 w-4 text-emerald-600" />
+                            <span>পিডিএফ স্যাম্পল / Preview Sample (PDF or Images)</span>
+                          </span>
+                        </label>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full font-bold">
+                          Max 5MB
+                        </span>
+                      </div>
+                      
+                      <p className="text-[11px] text-slate-500 mb-3">
+                        Tick this option to allow customers to preview sample book pages or PDF on the website via a "পিডিএফ স্যাম্পল পড়ে দেখুন" button.
+                      </p>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">ISBN</label>
-                            <input type="text" placeholder="ISBN number" value={isbn} onChange={(e) => setIsbn(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono" />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">Color Grade</label>
-                            <input type="text" placeholder="e.g. 4 Color" value={colorGrade} onChange={(e) => setColorGrade(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs" />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">PagesNumber of pages</label>
-                            <input type="number" placeholder="250" value={pages} onChange={(e) => setPages(e.target.value === '' ? '' : Number(e.target.value))} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs" />
-                          </div>
-                        </div>
-
-                        <div className="mt-3 border-t border-emerald-100 pt-3">
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Short Preview PDFRead on</label>
-                          <p className="text-[10px] text-slate-400 mb-2">Customers can read this PDF for free by clicking the "Read" button.</p>
-
-                          <div className="space-y-3">
-                            {/* Upload Button */}
-                            <label className="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl cursor-pointer transition-colors w-fit">
-                              {isUploadingSamplePdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                              <input type="file" accept="application/pdf" onChange={async (ev) => {
-                                const f = ev.target.files?.[0];
-                                if (!f) return;
-                                try {
-                                  setIsUploadingSamplePdf(true);
-                                  const dest = `products/${editingProduct?.id || 'new'}-sample-${Date.now()}.pdf`;
-                                  const url = await uploadFileToStorage(f, dest);
-                                  setSamplePdfUrlState(url);
-                                } catch (err: any) {
-                                  console.error('Sample PDF upload failed:', err);
-                                  setFeedback({
-                                    isOpen: true,
-                                    type: 'error',
-                                    title: 'PDF upload failed',
-                                    message: 'There was a problem uploading the PDF file. Please try again.'
-                                  });
-                                } finally {
-                                  setIsUploadingSamplePdf(false);
-                                }
-                              }} className="hidden" />
-                              {isUploadingSamplePdf ? 'Uploading PDF...' : 'Upload the PDF file'}
+                      {Boolean(samplePdfUrlState || samplePages.length > 0) && (
+                        <div className="space-y-4 pt-2 border-t border-emerald-100">
+                          {/* 1. PDF Upload / URL */}
+                          <div className="space-y-2">
+                            <label className="block text-[11px] font-bold text-slate-700">
+                              Upload PDF File (Max 5MB) or Paste Link:
                             </label>
-                            
-                            {/* URL Input */}
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase">Or give the link:</span>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <label className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl cursor-pointer transition-colors shadow-xs">
+                                {isUploadingSamplePdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                                <input 
+                                  type="file" 
+                                  accept="application/pdf" 
+                                  onChange={async (ev) => {
+                                    const f = ev.target.files?.[0];
+                                    if (!f) return;
+                                    if (f.size > 5 * 1024 * 1024) {
+                                      setFeedback({
+                                        isOpen: true,
+                                        type: 'error',
+                                        title: 'File too large',
+                                        message: 'PDF file size must be less than 5 MB.'
+                                      });
+                                      return;
+                                    }
+                                    try {
+                                      setIsUploadingSamplePdf(true);
+                                      const dest = `products/${editingProduct?.id || 'new'}-sample-${Date.now()}.pdf`;
+                                      const url = await uploadFileToStorage(f, dest);
+                                      setSamplePdfUrlState(url);
+                                    } catch (err: any) {
+                                      console.error('Sample PDF upload failed:', err);
+                                      setFeedback({
+                                        isOpen: true,
+                                        type: 'error',
+                                        title: 'PDF upload failed',
+                                        message: 'There was a problem uploading the PDF file. Please try again.'
+                                      });
+                                    } finally {
+                                      setIsUploadingSamplePdf(false);
+                                    }
+                                  }} 
+                                  className="hidden" 
+                                />
+                                {isUploadingSamplePdf ? 'Uploading PDF...' : 'Upload PDF Sample (≤ 5MB)'}
+                              </label>
+
                               <input 
                                 type="text" 
-                                placeholder="such as: /ebook/kg_2.pdf or URL" 
-                                value={samplePdfUrlState}
+                                placeholder="Or enter direct PDF URL / file path..." 
+                                value={samplePdfUrlState === 'enabled' ? '' : samplePdfUrlState}
                                 onChange={(e) => setSamplePdfUrlState(e.target.value)}
-                                className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                                className="flex-1 min-w-[200px] px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono"
                               />
                             </div>
 
-                            {/* Preview & Remove */}
-                            {samplePdfUrlState && (
+                            {samplePdfUrlState && samplePdfUrlState !== 'enabled' && (
                               <div className="flex items-center justify-between p-3 bg-white border border-emerald-200 rounded-xl mt-2">
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 bg-emerald-50 rounded-lg">
-                                    <FileText className="h-5 w-5 text-emerald-600" />
-                                  </div>
+                                <div className="flex items-center gap-2.5">
+                                  <FileText className="h-5 w-5 text-emerald-600" />
                                   <div>
-                                    <p className="text-[11px] font-bold text-slate-800">PDF link is set</p>
-                                    <button type="button" onClick={() => setPreviewPdfUrl(samplePdfUrlState)} className="text-[10px] text-emerald-600 hover:text-emerald-700 hover:underline font-bold mt-0.5 cursor-pointer">
-                                      View the PDF
+                                    <p className="text-[11px] font-bold text-slate-800">Sample PDF Attached</p>
+                                    <button 
+                                      type="button" 
+                                      onClick={() => setPreviewPdfUrl(samplePdfUrlState)} 
+                                      className="text-[10px] text-emerald-600 hover:text-emerald-700 hover:underline font-bold cursor-pointer"
+                                    >
+                                      Preview PDF ↗
                                     </button>
                                   </div>
                                 </div>
                                 <button 
                                   type="button" 
                                   onClick={() => setSamplePdfUrlState('')} 
-                                  className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                                  className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                                 >
-                                  <X className="h-3 w-3" /> remove
+                                  <X className="h-4 w-4" />
                                 </button>
                               </div>
                             )}
                           </div>
+
+                          {/* 2. Sample Book Images Upload (Alternative to PDF) */}
+                          <div className="space-y-2 pt-2 border-t border-emerald-100/80">
+                            <label className="block text-[11px] font-bold text-slate-700">
+                              Or Upload Book Sample Images / Pages (Max 5MB each):
+                            </label>
+                            
+                            <label className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors border border-slate-300">
+                              {isUploadingSampleImages ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2 text-slate-500" />}
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                multiple
+                                onChange={async (ev) => {
+                                  const files = Array.from(ev.target.files || []);
+                                  if (files.length === 0) return;
+                                  try {
+                                    setIsUploadingSampleImages(true);
+                                    const uploadedUrls: string[] = [];
+                                    for (const f of files) {
+                                      if (f.size > 5 * 1024 * 1024) continue;
+                                      const dest = `products/samples/${Date.now()}-${f.name}`;
+                                      const url = await uploadFileToStorage(f, dest);
+                                      uploadedUrls.push(url);
+                                    }
+                                    setSamplePages(prev => [...prev, ...uploadedUrls]);
+                                  } catch (err) {
+                                    console.error('Failed uploading sample images:', err);
+                                  } finally {
+                                    setIsUploadingSampleImages(false);
+                                  }
+                                }} 
+                                className="hidden" 
+                              />
+                              <span>Upload Sample Pages / Images</span>
+                            </label>
+
+                            {samplePages.length > 0 && (
+                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-2">
+                                {samplePages.map((url, sIdx) => (
+                                  <div key={sIdx} className="relative group aspect-[3/4] rounded-lg overflow-hidden border border-slate-200 bg-white">
+                                    <img src={url} alt={`Sample page ${sIdx + 1}`} className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => setSamplePages(prev => prev.filter((_, idx) => idx !== sIdx))}
+                                      className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-rose-600 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

@@ -9,7 +9,12 @@ export const SubCategoryItemSchema = z.object({
 export const CategoryItemSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'categoryর Name is required'),
+  banglaName: z.string().optional(),
   order: z.number().optional(),
+  image: z.string().optional(),
+  icon: z.string().optional(),
+  description: z.string().optional(),
+  productOrder: z.string().optional(),
   subcategories: z.array(SubCategoryItemSchema).optional().default([])
 });
 

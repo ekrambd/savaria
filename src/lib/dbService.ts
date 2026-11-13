@@ -1325,8 +1325,17 @@ export const dbService = {
     await this.saveEcomSettings({ ...current, ...partial });
   },
 
-  // --- Customers List (Derived from Orders) ---
+  // --- Customers List (Derived from Orders & Server API) ---
   async getCustomers(): Promise<Customer[]> {
+    try {
+      const res = await ApiClient.getCustomerList();
+      if (res && res.success && Array.isArray(res.customers)) {
+        return res.customers;
+      }
+    } catch (e) {
+      console.warn('Server customers endpoint fallback to local aggregation:', e);
+    }
+
     const orders = await this.getBookOrders();
     this._ordersCache = null; // invalidate cache
     const customerMap = new Map<string, Customer>();
@@ -1337,10 +1346,11 @@ export const dbService = {
 
       const existing = customerMap.get(phoneKey);
       if (existing) {
-        existing.totalOrders += 1;
-        existing.totalSpent += ord.totalPrice || 0;
+        existing.totalOrders = (existing.totalOrders || 0) + 1;
+        existing.totalSpent = (existing.totalSpent || 0) + (ord.totalPrice || 0);
+        if (!existing.orders) existing.orders = [];
         existing.orders.push(ord);
-        if (new Date(ord.createdAt).getTime() > new Date(existing.lastOrderDate).getTime()) {
+        if (new Date(ord.createdAt).getTime() > new Date(existing.lastOrderDate || 0).getTime()) {
           existing.lastOrderDate = ord.createdAt;
           existing.name = ord.customerName || existing.name;
           existing.address = ord.address || existing.address;
@@ -1361,7 +1371,7 @@ export const dbService = {
       }
     });
 
-    return Array.from(customerMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+    return Array.from(customerMap.values()).sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0));
   },
 
   // --- Customer Authentication & Lookup ---
@@ -1513,6 +1523,23 @@ export const dbService = {
         storeId: settings.pathaoStoreId,
         environment: settings.pathaoEnvironment,
         baseUrl: settings.pathaoBaseUrl
+      }
+    });
+    return result;
+  },
+
+  // Dispatch order to Steadfast Courier
+  async sendToSteadfastCourier(order: BookOrder): Promise<{ success: boolean; consignmentId?: string; trackingCode?: string; message?: string }> {
+    if (order.steadfastTrackingCode) {
+      return { success: false, message: 'এই অর্ডারটি ইতিমধ্যে Steadfast-এ পাঠানো হয়েছে।' };
+    }
+    const settings = await this.getEcomSettings();
+    const result = await ApiClient.dispatchSteadfast({
+      order,
+      credentials: {
+        apiKey: settings.steadfastApiKey,
+        secretKey: settings.steadfastSecretKey,
+        baseUrl: settings.steadfastBaseUrl
       }
     });
     return result;

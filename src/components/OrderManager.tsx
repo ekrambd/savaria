@@ -708,20 +708,53 @@ export default function OrderManager({
     }
   };
 
-  const handleBulkTransferToCourier = () => {
+  // Dispatch to Steadfast Courier
+  const handleSteadfastDispatch = async (order: BookOrder) => {
+    setDispatchingId(order.id);
+    setOpenActionMenuOrderId(null);
+    try {
+      const result = await dbService.sendToSteadfastCourier(order);
+      if (result.success && result.trackingCode) {
+        onUpdateOrder({
+          ...order,
+          status: 'Shipped',
+          courierProvider: 'steadfast',
+          steadfastTrackingCode: result.trackingCode,
+          steadfastStatus: 'in_review'
+        });
+      }
+      setDispatchDialog({
+        orderId: order.id,
+        message: result.message || `Steadfast Courier পার্সেল সফলভাবে বুকিং হয়েছে! (Tracking: ${result.trackingCode})`,
+        success: result.success
+      });
+    } catch (err: any) {
+      console.error('Steadfast dispatch error:', err);
+      setDispatchDialog({
+        orderId: order.id,
+        message: err?.message || 'Steadfast Courier বুকিং ব্যর্থ হয়েছে',
+        success: false
+      });
+    } finally {
+      setDispatchingId(null);
+    }
+  };
+
+  const handleBulkTransferToCourier = (provider: 'pathao' | 'steadfast' = 'pathao') => {
     if (selectedOrderIds.length === 0) {
       return;
     }
 
     setBulkCourierConfirm({
       isOpen: true,
-      provider: 'pathao',
-      providerName: 'Pathao',
+      provider,
+      providerName: provider === 'pathao' ? 'Pathao' : 'Steadfast',
       count: selectedOrderIds.length
     });
   };
 
   const handleExecuteBulkTransfer = async () => {
+    const provider = bulkCourierConfirm.provider || 'pathao';
     setBulkCourierConfirm(prev => ({ ...prev, isOpen: false }));
 
     let successCount = 0;
@@ -729,21 +762,35 @@ export default function OrderManager({
       const target = orders.find(o => o.id === id);
       if (target) {
         try {
-          const res = await dbService.sendToPathaoCourier(target);
-          if (res.success && res.consignmentId) {
-            await onUpdateOrder({
-              ...target,
-              status: 'Shipped',
-              courierProvider: 'pathao',
-              pathaoConsignmentId: res.consignmentId,
-              pathaoTrackingCode: res.trackingCode || res.consignmentId,
-              pathaoStatus: res.orderStatus || 'Pending',
-              pathaoDeliveryFee: res.deliveryFee
-            });
-            successCount++;
+          if (provider === 'steadfast') {
+            const res = await dbService.sendToSteadfastCourier(target);
+            if (res.success && res.trackingCode) {
+              await onUpdateOrder({
+                ...target,
+                status: 'Shipped',
+                courierProvider: 'steadfast',
+                steadfastTrackingCode: res.trackingCode,
+                steadfastStatus: 'in_review'
+              });
+              successCount++;
+            }
+          } else {
+            const res = await dbService.sendToPathaoCourier(target);
+            if (res.success && res.consignmentId) {
+              await onUpdateOrder({
+                ...target,
+                status: 'Shipped',
+                courierProvider: 'pathao',
+                pathaoConsignmentId: res.consignmentId,
+                pathaoTrackingCode: res.trackingCode || res.consignmentId,
+                pathaoStatus: res.orderStatus || 'Pending',
+                pathaoDeliveryFee: res.deliveryFee
+              });
+              successCount++;
+            }
           }
         } catch (e) {
-          console.error(e);
+          console.error(`Bulk courier transfer error for ${id}:`, e);
         }
       }
     }
@@ -765,18 +812,28 @@ export default function OrderManager({
 
   const handleSyncCourier = async () => {
     const candidates = orders.filter(order =>
-      order.pathaoConsignmentId && 
+      (order.pathaoConsignmentId || order.steadfastTrackingCode) && 
       (selectedOrderIds.length === 0 || selectedOrderIds.includes(order.id))
     );
     if (candidates.length === 0) {
-      alert('Could not find Pathao tracking consignment ID to sync.');
+      alert('Could not find Pathao or Steadfast tracking consignment ID to sync.');
       return;
     }
 
     let successCount = 0;
     for (const order of candidates) {
       try {
-        if (order.pathaoConsignmentId) {
+        if (order.steadfastTrackingCode) {
+          const result = await ApiClient.getSteadfastStatus(order.steadfastTrackingCode);
+          const normalized = (result.status || '').toLowerCase();
+          const status = normalized.includes('delivered') || normalized === 'delivered_approval_pending'
+            ? 'Delivered'
+            : (normalized.includes('cancelled') || normalized.includes('return') || normalized.includes('hold'))
+              ? (normalized.includes('hold') ? 'Hold' : 'Return')
+              : order.status;
+          await onUpdateOrder({ ...order, status, steadfastStatus: result.status });
+          successCount++;
+        } else if (order.pathaoConsignmentId) {
           const result = await ApiClient.getPathaoStatus(order.pathaoConsignmentId);
           const normalized = (result.status || '').toLowerCase();
           const status = normalized.includes('delivered') || normalized === 'successful'
@@ -792,7 +849,7 @@ export default function OrderManager({
       }
     }
     setIsActionsMenuOpen(false);
-    alert(`${successCount} / ${candidates.length} orders successfully synced with Pathao courier.`);
+    alert(`${successCount} / ${candidates.length} orders successfully synced with courier.`);
   };
 
   // Export as Pathao Bulk CSV Format
@@ -828,6 +885,40 @@ export default function OrderManager({
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `Pathao_Bulk_Upload_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setIsExportMenuOpen(false);
+  };
+
+  // Export as Steadfast Bulk CSV Format
+  const exportSteadfastCSV = () => {
+    const list = selectedOrders.length > 0 ? selectedOrders : filteredOrders;
+    if (list.length === 0) {
+      alert('There are no orders to export.');
+      return;
+    }
+
+    const headers = [
+      'Invoice', 'Recipient Name', 'Recipient Phone', 'Recipient Address', 
+      'COD Amount', 'Note'
+    ];
+
+    const rows = list.map(o => [
+      `"${o.id}"`,
+      `"${(o.customerName || '').replace(/"/g, '""')}"`,
+      `"${o.phone}"`,
+      `"${(o.address + (o.district ? ', ' + o.district : '')).replace(/"/g, '""')}"`,
+      `"${o.paymentMethod && o.paymentMethod !== 'COD' && o.paymentMethod !== 'Cash on Delivery' ? 0 : (o.totalPrice || 0)}"`,
+      `"${(o.productTitle || 'Savaria BD Parcel').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Steadfast_Bulk_Upload_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1559,15 +1650,23 @@ export default function OrderManager({
                 </button>
 
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1 pt-2 border-t border-slate-100">
-                  Courier Integration (Pathao)
+                  Courier Integration (Pathao & Steadfast)
                 </div>
 
                 <button
-                  onClick={handleBulkTransferToCourier}
+                  onClick={() => handleBulkTransferToCourier('pathao')}
                   className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-700 rounded-xl flex items-center space-x-2 cursor-pointer font-bold"
                 >
                   <Send className="h-4 w-4 text-red-600" />
                   <span>Send to Pathao</span>
+                </button>
+
+                <button
+                  onClick={() => handleBulkTransferToCourier('steadfast')}
+                  className="w-full text-left px-3 py-2 hover:bg-purple-50 text-purple-700 rounded-xl flex items-center space-x-2 cursor-pointer font-bold"
+                >
+                  <Truck className="h-4 w-4 text-purple-600" />
+                  <span>Send to Steadfast</span>
                 </button>
 
                 <button
@@ -1637,6 +1736,14 @@ export default function OrderManager({
                 >
                   <Download className="h-4 w-4 text-red-600" />
                   <span>Pathao Courier Bulk CSV</span>
+                </button>
+
+                <button
+                  onClick={exportSteadfastCSV}
+                  className="w-full text-left px-3 py-2 hover:bg-purple-50 text-purple-900 rounded-xl flex items-center space-x-2 cursor-pointer font-bold"
+                >
+                  <Download className="h-4 w-4 text-purple-600" />
+                  <span>Steadfast Courier Bulk CSV</span>
                 </button>
 
                 <button
@@ -1966,6 +2073,15 @@ export default function OrderManager({
                             </span>
                           </div>
                         )}
+
+                        {order.steadfastTrackingCode && (
+                          <div className="mt-1">
+                            <span className="text-[10px] font-mono font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60 inline-flex items-center gap-1 max-w-full">
+                              <Truck className="h-3 w-3 text-purple-600 shrink-0" />
+                              <span className="truncate">Steadfast: #{order.steadfastTrackingCode}</span>
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       {/* 6. Actions */}
@@ -2035,7 +2151,17 @@ export default function OrderManager({
                                   className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-slate-700 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <Send className="h-4 w-4 text-red-600" />
-                                  <span>{dispatchingId === order.id ? 'Booking...' : 'Send to Pathao'}</span>
+                                  <span>{dispatchingId === order.id ? 'Booking...' : (order.pathaoConsignmentId ? 'Sent to Pathao' : 'Send to Pathao')}</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleSteadfastDispatch(order)}
+                                  disabled={dispatchingId === order.id || Boolean(order.steadfastTrackingCode)}
+                                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-slate-700 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-50 font-medium"
+                                >
+                                  <Truck className="h-4 w-4 text-purple-600" />
+                                  <span>{dispatchingId === order.id ? 'Booking...' : (order.steadfastTrackingCode ? 'Sent to Steadfast' : 'Send to Steadfast')}</span>
                                 </button>
 
                                 <button
@@ -2147,7 +2273,7 @@ export default function OrderManager({
                   {dispatchDialog.success ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Pathao Courier</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">Courier Dispatch</p>
                   <h3 className="mt-1 text-base font-bold text-slate-900">
                     {dispatchDialog.success ? 'Parcel entry completed' : 'Parcel entry failed'}
                   </h3>

@@ -638,6 +638,10 @@ export default function AdminDashboard({ adminEmail, onLogout }: AdminDashboardP
                 {activeTab === 'customers' && (
                   <CustomerManager 
                     customers={customers}
+                    onRefresh={async () => {
+                      const updated = await dbService.getCustomers();
+                      setCustomers(updated);
+                    }}
                   />
                 )}
                 {activeTab === 'coupons' && (

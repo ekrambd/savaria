@@ -212,9 +212,12 @@ export interface SubCategoryItem {
 export interface CategoryItem {
   id: string;
   name: string;
+  banglaName?: string;
   order?: number;
   image?: string;
   icon?: string;
+  description?: string;
+  productOrder?: 'default' | 'price-asc' | 'price-desc' | 'newest' | 'popular';
   subcategories?: SubCategoryItem[];
 }
 
@@ -394,17 +397,28 @@ export interface LandingPageData {
   colorSectionTitle?: string; // e.g. 'Click on the color button below to preview the watch and order'
 }
 
+export interface FlashSaleItem {
+  productId: string;
+  flashPrice: number;
+  originalPrice?: number;
+  stockLimit?: number;
+}
+
 export interface FlashSaleSettings {
   enabled: boolean;
-  productId?: string;
+  campaignTitle?: string; // e.g. '11.11 MEGA FLASH SALE'
   badgeTag?: string; // e.g. 'FEATURED PROMOTION'
   title?: string; // e.g. 'Seasonal Collection'
   subtitle?: string; // description
   customImage?: string; // optional image override
-  flashPrice?: number; // special promotional price
-  originalPrice?: number; // original strike-through price
-  endDate?: string; // ISO date string e.g. '2026-10-31T23:59:59'
+  startDate?: string; // ISO date string e.g. '2026-11-11T00:00:00'
+  endDate?: string; // ISO date string e.g. '2026-11-13T23:59:59'
   buttonText?: string; // e.g. 'SHOP NOW'
+  items?: FlashSaleItem[]; // Multi-product flash sale items
+  // Backward compatibility fields
+  productId?: string;
+  flashPrice?: number;
+  originalPrice?: number;
   showVideoSection?: boolean;
   videoTitle?: string;
   videoSubtitle?: string;
@@ -578,11 +592,20 @@ export interface EcomSettings {
   pathaoMinCharge?: number;
   pathaoMaxCharge?: number;
   pathaoWebhookSecret?: string;
-  defaultCourierProvider?: 'pathao';
+
+  // Steadfast Courier API Integration Settings
+  steadfastApiKey?: string;
+  steadfastSecretKey?: string;
+  steadfastBaseUrl?: string;
+
+  defaultCourierProvider?: 'pathao' | 'steadfast';
   aboutSettings?: AboutPageSettings;
 
   // Cart Drawer Embedded Review Settings
   cartReview?: CartReviewSettings;
+
+  // Customer custom labels / metadata map by phone: { "01812345678": { customLabel: "VIP", notes: "..." } }
+  customerLabels?: Record<string, { label?: string; notes?: string; updatedAt?: string }>;
 
   blogPosts?: any[];
 }
@@ -793,6 +816,16 @@ export interface InstituteInfo {
   bearingRollLocation?: string;
 }
 
+export interface CustomerAddress {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  deliveryArea: string; // e.g. "Rajshahi > Joypurhat > Joypurhat Sadar"
+  addressType: 'Home' | 'Office' | 'Hometown';
+  isDefault?: boolean;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -802,6 +835,7 @@ export interface Customer {
 
   address?: string;
   district?: string;
+  addresses?: CustomerAddress[];
   registeredAt?: string;
   totalOrders?: number;
   totalSpent?: number;
@@ -814,6 +848,11 @@ export interface Customer {
   authMethod?: 'email' | 'phone' | 'google';
   wishlist?: string[];
   createdAt?: string;
+
+  // Custom labels / tags e.g. "VIP", "School", "Unity", "Wholesale"
+  customLabel?: 'VIP' | 'School' | 'Unity' | string;
+  customTagColor?: string;
+  adminNotes?: string;
 }
 
 export interface BookOrder {
@@ -865,13 +904,15 @@ export interface BookOrder {
   pathaoTrackingCode?: string;
   pathaoStatus?: string;
   pathaoDeliveryFee?: number;
+  steadfastTrackingCode?: string;
+  steadfastStatus?: string;
   recipientCity?: number;
   recipientCityName?: string;
   recipientZone?: number;
   recipientZoneName?: string;
   recipientArea?: number;
   recipientAreaName?: string;
-  courierProvider?: 'pathao' | string;
+  courierProvider?: 'pathao' | 'steadfast' | string;
   couponCode?: string;
   luckyCouponCode?: string;
   discountAmount?: number;

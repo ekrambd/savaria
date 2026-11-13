@@ -48,11 +48,19 @@ export default function CategoryManager() {
 
   // Category Inputs (Add / Edit)
   const [newCatName, setNewCatName] = useState('');
+  const [newCatBanglaName, setNewCatBanglaName] = useState('');
+  const [newCatSortOrder, setNewCatSortOrder] = useState<number>(0);
+  const [newCatProductOrder, setNewCatProductOrder] = useState<string>('default');
+  const [newCatDescription, setNewCatDescription] = useState('');
   const [newCatImage, setNewCatImage] = useState('');
   const [isUploadingNewCat, setIsUploadingNewCat] = useState(false);
 
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editingCatName, setEditingCatName] = useState('');
+  const [editingCatBanglaName, setNewEditingCatBanglaName] = useState('');
+  const [editingCatSortOrder, setEditingCatSortOrder] = useState<number>(0);
+  const [editingCatProductOrder, setEditingCatProductOrder] = useState<string>('default');
+  const [editingCatDescription, setEditingCatDescription] = useState('');
   const [editingCatImage, setEditingCatImage] = useState('');
   const [isUploadingEditCat, setIsUploadingEditCat] = useState(false);
 
@@ -187,11 +195,24 @@ export default function CategoryManager() {
 
   const categoryItems = settings.categoryItems || [];
 
+  const sortedCategoryItems = useMemo(() => {
+    return [...categoryItems].sort((a, b) => {
+      const orderA = typeof a.order === 'number' ? a.order : 0;
+      const orderB = typeof b.order === 'number' ? b.order : 0;
+      return orderA - orderB;
+    });
+  }, [categoryItems]);
+
   // Flattened Subcategories with Parent Category Details
   const allSubcategories = useMemo<FlattenedSubCategory[]>(() => {
     const list: FlattenedSubCategory[] = [];
-    categoryItems.forEach(cat => {
-      (cat.subcategories || []).forEach(sub => {
+    sortedCategoryItems.forEach(cat => {
+      const sortedSubs = [...(cat.subcategories || [])].sort((a, b) => {
+        const orderA = typeof a.order === 'number' ? a.order : 0;
+        const orderB = typeof b.order === 'number' ? b.order : 0;
+        return orderA - orderB;
+      });
+      sortedSubs.forEach(sub => {
         list.push({
           id: sub.id,
           name: sub.name,
@@ -203,7 +224,7 @@ export default function CategoryManager() {
       });
     });
     return list;
-  }, [categoryItems]);
+  }, [sortedCategoryItems]);
 
   // Product Counts per Category & Subcategory
   const productCountMap = useMemo(() => {
@@ -227,12 +248,15 @@ export default function CategoryManager() {
     };
   }, [products]);
 
-  // Filtered Categories
+  // Filtered Categories (Priority/Sort Order based)
   const filteredCategories = useMemo(() => {
-    if (!categorySearch.trim()) return categoryItems;
+    if (!categorySearch.trim()) return sortedCategoryItems;
     const term = categorySearch.toLowerCase().trim();
-    return categoryItems.filter(c => c.name.toLowerCase().includes(term));
-  }, [categoryItems, categorySearch]);
+    return sortedCategoryItems.filter(c => 
+      c.name.toLowerCase().includes(term) ||
+      (c.banglaName && c.banglaName.toLowerCase().includes(term))
+    );
+  }, [sortedCategoryItems, categorySearch]);
 
   // Filtered Subcategories
   const filteredSubcategories = useMemo(() => {
@@ -353,15 +377,20 @@ export default function CategoryManager() {
       return;
     }
 
+    const assignedOrder = Number.isFinite(Number(newCatSortOrder)) ? Number(newCatSortOrder) : categoryItems.length;
+
     const newCat: CategoryItem = {
       id: `cat-${Date.now()}`,
       name,
+      banglaName: newCatBanglaName.trim() || undefined,
+      order: assignedOrder,
+      productOrder: (newCatProductOrder as any) || 'default',
+      description: newCatDescription.trim() || undefined,
       image: newCatImage.trim() || undefined,
-      order: categoryItems.length,
       subcategories: []
     };
 
-    const updatedItems = [...categoryItems, newCat];
+    const updatedItems = [...categoryItems, newCat].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     setSettings(prev => ({
       ...prev,
       categories: updatedItems.map(c => c.name),
@@ -370,6 +399,10 @@ export default function CategoryManager() {
 
     persistCategories(updatedItems);
     setNewCatName('');
+    setNewCatBanglaName('');
+    setNewCatSortOrder(0);
+    setNewCatProductOrder('default');
+    setNewCatDescription('');
     setNewCatImage('');
     setIsAddCategoryOpen(false);
     if (newCatFileRef.current) newCatFileRef.current.value = '';
@@ -378,7 +411,7 @@ export default function CategoryManager() {
       isOpen: true,
       type: 'success',
       title: 'Category Created',
-      message: `Category "${name}" has been created successfully.`
+      message: `Category "${name}" with priority sort order ${assignedOrder} has been created.`
     });
   };
 
@@ -386,6 +419,10 @@ export default function CategoryManager() {
   const handleStartEditCategory = (cat: CategoryItem) => {
     setEditingCatId(cat.id);
     setEditingCatName(cat.name);
+    setNewEditingCatBanglaName(cat.banglaName || '');
+    setEditingCatSortOrder(typeof cat.order === 'number' ? cat.order : 0);
+    setEditingCatProductOrder(cat.productOrder || 'default');
+    setEditingCatDescription(cat.description || '');
     setEditingCatImage(cat.image || '');
   };
 
@@ -407,13 +444,19 @@ export default function CategoryManager() {
       return;
     }
 
+    const assignedOrder = Number.isFinite(Number(editingCatSortOrder)) ? Number(editingCatSortOrder) : 0;
+
     const updatedItems = categoryItems.map(c => 
       c.id === catId ? {
         ...c,
         name,
+        banglaName: editingCatBanglaName.trim() || undefined,
+        order: assignedOrder,
+        productOrder: (editingCatProductOrder as any) || 'default',
+        description: editingCatDescription.trim() || undefined,
         image: editingCatImage.trim() || undefined
       } : c
-    );
+    ).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     setSettings(prev => ({
       ...prev,
@@ -431,6 +474,23 @@ export default function CategoryManager() {
       title: 'Category Updated',
       message: `Category "${name}" updated successfully.`
     });
+  };
+
+  // Direct change of sort order from row input
+  const handleQuickUpdateSortOrder = (catId: string, newOrderVal: number) => {
+    const updatedItems = categoryItems.map(c => {
+      if (c.id === catId) {
+        return { ...c, order: newOrderVal };
+      }
+      return c;
+    }).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    setSettings(prev => ({
+      ...prev,
+      categories: updatedItems.map(c => c.name),
+      categoryItems: updatedItems
+    }));
+    persistCategories(updatedItems);
   };
 
   // 4. Move Category Up / Down
@@ -752,7 +812,7 @@ export default function CategoryManager() {
             type="button"
             onClick={handleSaveAll}
             disabled={isSaving}
-            className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isSaving ? (
               <>
@@ -784,20 +844,20 @@ export default function CategoryManager() {
           onClick={() => setActiveModule('categories')}
           className={`relative p-5 sm:p-6 rounded-2xl border transition-all duration-200 cursor-pointer shadow-xs select-none ${
             activeModule === 'categories'
-              ? 'bg-emerald-50/40 border-[#16a34a] ring-2 ring-[#16a34a]/20 shadow-sm'
+              ? 'bg-emerald-50/40 border-[#2563eb] ring-2 ring-[#2563eb]/20 shadow-sm'
               : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
           }`}
         >
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className={`p-3 rounded-2xl ${
-              activeModule === 'categories' ? 'bg-[#16a34a] text-white shadow-sm' : 'bg-slate-100 text-slate-700'
+              activeModule === 'categories' ? 'bg-[#2563eb] text-white shadow-sm' : 'bg-slate-100 text-slate-700'
             }`}>
               <Layers className="h-6 w-6" />
             </div>
 
             <span className={`text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
               activeModule === 'categories'
-                ? 'bg-[#16a34a] text-white'
+                ? 'bg-[#2563eb] text-white'
                 : 'bg-slate-100 text-slate-600'
             }`}>
               {activeModule === 'categories' ? '● Active Module' : 'Click to Manage'}
@@ -815,7 +875,7 @@ export default function CategoryManager() {
 
           <div className="mt-4 pt-3.5 border-t border-slate-200/80 flex items-center justify-between text-xs font-bold">
             <div className="flex items-center gap-2 text-slate-700">
-              <span className="text-base font-black text-[#16a34a]">{categoryItems.length}</span>
+              <span className="text-base font-black text-[#2563eb]">{categoryItems.length}</span>
               <span>Active Categories</span>
             </div>
             <div className="text-slate-400 text-[11px]">
@@ -829,20 +889,20 @@ export default function CategoryManager() {
           onClick={() => setActiveModule('subcategories')}
           className={`relative p-5 sm:p-6 rounded-2xl border transition-all duration-200 cursor-pointer shadow-xs select-none ${
             activeModule === 'subcategories'
-              ? 'bg-emerald-50/40 border-[#16a34a] ring-2 ring-[#16a34a]/20 shadow-sm'
+              ? 'bg-emerald-50/40 border-[#2563eb] ring-2 ring-[#2563eb]/20 shadow-sm'
               : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
           }`}
         >
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className={`p-3 rounded-2xl ${
-              activeModule === 'subcategories' ? 'bg-[#16a34a] text-white shadow-sm' : 'bg-slate-100 text-slate-700'
+              activeModule === 'subcategories' ? 'bg-[#2563eb] text-white shadow-sm' : 'bg-slate-100 text-slate-700'
             }`}>
               <Tag className="h-6 w-6" />
             </div>
 
             <span className={`text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
               activeModule === 'subcategories'
-                ? 'bg-[#16a34a] text-white'
+                ? 'bg-[#2563eb] text-white'
                 : 'bg-slate-100 text-slate-600'
             }`}>
               {activeModule === 'subcategories' ? '● Active Module' : 'Click to Manage'}
@@ -860,7 +920,7 @@ export default function CategoryManager() {
 
           <div className="mt-4 pt-3.5 border-t border-slate-200/80 flex items-center justify-between text-xs font-bold">
             <div className="flex items-center gap-2 text-slate-700">
-              <span className="text-base font-black text-[#16a34a]">{allSubcategories.length}</span>
+              <span className="text-base font-black text-[#2563eb]">{allSubcategories.length}</span>
               <span>Total Subcategories</span>
             </div>
             <div className="text-slate-400 text-[11px]">
@@ -885,7 +945,7 @@ export default function CategoryManager() {
                 placeholder="Search categories by name..."
                 value={categorySearch}
                 onChange={(e) => setCategorySearch(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all placeholder:text-slate-400"
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all placeholder:text-slate-400"
               />
               {categorySearch && (
                 <button
@@ -902,7 +962,7 @@ export default function CategoryManager() {
               <button
                 type="button"
                 onClick={() => setIsAddCategoryOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add Category</span>
@@ -912,7 +972,7 @@ export default function CategoryManager() {
 
           {/* Add Category Slide-Down Drawer / Form */}
           {isAddCategoryOpen && (
-            <div className="bg-white border-2 border-[#16a34a]/30 rounded-2xl p-5 shadow-sm space-y-4 animate-in slide-in-from-top-3 duration-200">
+            <div className="bg-white border-2 border-[#2563eb]/30 rounded-2xl p-5 shadow-sm space-y-4 animate-in slide-in-from-top-3 duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-green-50 text-green-700 rounded-lg">
@@ -935,55 +995,119 @@ export default function CategoryManager() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Category Name <span className="text-rose-500">*</span>
+                      Name <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
                       placeholder="e.g. Women's Clothing, Kids Fashion..."
                       value={newCatName}
                       onChange={(e) => setNewCatName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all placeholder:text-slate-400"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all placeholder:text-slate-400"
                       autoFocus
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Thumbnail Image (Optional)
+                      Bangla name
                     </label>
-                    {newCatImage ? (
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={newCatImage} 
-                          alt="Category preview" 
-                          className="w-10 h-10 object-cover rounded-xl border border-slate-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setNewCatImage('')}
-                          className="text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
-                        >
-                          Remove Image
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer transition-colors">
-                        <Upload className="h-4 w-4 text-slate-400" />
-                        <span>{isUploadingNewCat ? 'Uploading...' : 'Upload Thumbnail'}</span>
-                        <input
-                          ref={newCatFileRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageCompress(file, setNewCatImage, setIsUploadingNewCat);
-                          }}
-                          className="hidden"
-                          disabled={isUploadingNewCat}
-                        />
-                      </label>
-                    )}
+                    <input
+                      type="text"
+                      placeholder="e.g. মেয়েদের পোশাক, শিশুদের কালেকশন..."
+                      value={newCatBanglaName}
+                      onChange={(e) => setNewCatBanglaName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all placeholder:text-slate-400"
+                    />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Sort order (Priority)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newCatSortOrder}
+                      onChange={(e) => setNewCatSortOrder(parseInt(e.target.value, 10) || 0)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Lower number (e.g. 0, 1, 2) displays first</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Product order
+                    </label>
+                    <select
+                      value={newCatProductOrder}
+                      onChange={(e) => setNewCatProductOrder(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all cursor-pointer"
+                    >
+                      <option value="default">Default</option>
+                      <option value="newest">Newest First</option>
+                      <option value="popular">Most Popular</option>
+                      <option value="price-asc">Price: Low to High</option>
+                      <option value="price-desc">Price: High to Low</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Category description..."
+                    value={newCatDescription}
+                    onChange={(e) => setNewCatDescription(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all resize-y placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Pictures / Image
+                  </label>
+                  {newCatImage ? (
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={newCatImage} 
+                        alt="Category preview" 
+                        className="w-12 h-12 object-cover rounded-xl border border-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewCatImage('')}
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
+                      >
+                        Remove Image
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer transition-colors">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4 text-slate-400" />
+                        <span>Image *</span>
+                      </div>
+                      <span className="text-[#2563eb] font-bold hover:underline">
+                        {isUploadingNewCat ? 'Uploading...' : 'Upload'}
+                      </span>
+                      <input
+                        ref={newCatFileRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageCompress(file, setNewCatImage, setIsUploadingNewCat);
+                        }}
+                        className="hidden"
+                        disabled={isUploadingNewCat}
+                      />
+                    </label>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
@@ -997,7 +1121,7 @@ export default function CategoryManager() {
                   <button
                     type="submit"
                     disabled={!newCatName.trim()}
-                    className="px-5 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    className="px-5 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                   >
                     Save Category
                   </button>
@@ -1011,6 +1135,7 @@ export default function CategoryManager() {
             <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
               <span>Category Item ({filteredCategories.length})</span>
               <div className="flex items-center gap-8">
+                <span className="text-center">Priority / Sort Order</span>
                 <span>Subcategories & Products</span>
                 <span className="w-24 text-right">Actions</span>
               </div>
@@ -1026,7 +1151,7 @@ export default function CategoryManager() {
                   return (
                     <div
                       key={cat.id}
-                      className="p-4 hover:bg-slate-50/60 transition-colors flex items-center justify-between gap-4"
+                      className="p-4 hover:bg-slate-50/60 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
                     >
                       {/* Left: Thumbnail & Name (or Inline Edit) */}
                       <div className="flex items-center gap-3.5 flex-1 min-w-0">
@@ -1036,7 +1161,7 @@ export default function CategoryManager() {
                             type="button"
                             disabled={idx === 0}
                             onClick={() => handleMoveCategory(idx, 'up')}
-                            className="p-1 text-slate-400 hover:text-[#16a34a] hover:bg-green-50 rounded disabled:opacity-20 cursor-pointer transition-colors"
+                            className="p-1 text-slate-400 hover:text-[#2563eb] hover:bg-green-50 rounded disabled:opacity-20 cursor-pointer transition-colors"
                             title="Move Up"
                           >
                             <ArrowUp className="h-3 w-3" />
@@ -1045,7 +1170,7 @@ export default function CategoryManager() {
                             type="button"
                             disabled={idx === filteredCategories.length - 1}
                             onClick={() => handleMoveCategory(idx, 'down')}
-                            className="p-1 text-slate-400 hover:text-[#16a34a] hover:bg-green-50 rounded disabled:opacity-20 cursor-pointer transition-colors"
+                            className="p-1 text-slate-400 hover:text-[#2563eb] hover:bg-green-50 rounded disabled:opacity-20 cursor-pointer transition-colors"
                             title="Move Down"
                           >
                             <ArrowDown className="h-3 w-3" />
@@ -1067,82 +1192,155 @@ export default function CategoryManager() {
 
                         {/* Name or Edit Input */}
                         {isEditing ? (
-                          <div className="flex items-center gap-2 flex-1 max-w-md">
-                            <input
-                              type="text"
-                              value={editingCatName}
-                              onChange={(e) => setEditingCatName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveEditCategory(cat.id);
-                                if (e.key === 'Escape') setEditingCatId(null);
-                              }}
-                              className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 flex-1 outline-none focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a]"
-                              autoFocus
-                            />
-
-                            {/* Image selector */}
-                            {editingCatImage ? (
-                              <div className="relative group shrink-0">
-                                <img
-                                  src={editingCatImage}
-                                  alt="Edit preview"
-                                  className="w-8 h-8 object-cover rounded-lg border border-slate-300"
+                          <div className="space-y-3 flex-1 max-w-xl bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Name *</label>
+                                <input
+                                  type="text"
+                                  value={editingCatName}
+                                  onChange={(e) => setEditingCatName(e.target.value)}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb]"
+                                  autoFocus
                                 />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Bangla Name</label>
+                                <input
+                                  type="text"
+                                  placeholder="বাংলা নাম..."
+                                  value={editingCatBanglaName}
+                                  onChange={(e) => setNewEditingCatBanglaName(e.target.value)}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb]"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Sort Order</label>
+                                <input
+                                  type="number"
+                                  value={editingCatSortOrder}
+                                  onChange={(e) => setEditingCatSortOrder(parseInt(e.target.value, 10) || 0)}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb]"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Product Order</label>
+                                <select
+                                  value={editingCatProductOrder}
+                                  onChange={(e) => setEditingCatProductOrder(e.target.value)}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] cursor-pointer"
+                                >
+                                  <option value="default">Default</option>
+                                  <option value="newest">Newest First</option>
+                                  <option value="popular">Most Popular</option>
+                                  <option value="price-asc">Price: Low to High</option>
+                                  <option value="price-desc">Price: High to Low</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {/* Image selector */}
+                              {editingCatImage ? (
+                                <div className="relative group shrink-0">
+                                  <img
+                                    src={editingCatImage}
+                                    alt="Edit preview"
+                                    className="w-9 h-9 object-cover rounded-lg border border-slate-300"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCatImage('')}
+                                    className="absolute -top-1.5 -right-1.5 p-0.5 bg-rose-500 text-white rounded-full shadow-xs cursor-pointer"
+                                  >
+                                    <X className="h-2.5 w-2.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="p-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-lg cursor-pointer text-[10px] font-bold flex items-center gap-1 shrink-0">
+                                  <Upload className="h-3 w-3" />
+                                  <span>Thumbnail</span>
+                                  <input
+                                    ref={editCatFileRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleImageCompress(file, setEditingCatImage, setIsUploadingEditCat);
+                                    }}
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
+
+                              <div className="flex items-center gap-1.5 ml-auto">
                                 <button
                                   type="button"
-                                  onClick={() => setEditingCatImage('')}
-                                  className="absolute -top-1.5 -right-1.5 p-0.5 bg-rose-500 text-white rounded-full shadow-xs cursor-pointer"
+                                  onClick={() => handleSaveEditCategory(cat.id)}
+                                  className="px-3 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-xs font-bold cursor-pointer inline-flex items-center gap-1"
+                                  title="Save Changes"
                                 >
-                                  <X className="h-2.5 w-2.5" />
+                                  <Check className="h-3.5 w-3.5" />
+                                  <span>Save</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCatId(null)}
+                                  className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
+                                  title="Cancel"
+                                >
+                                  Cancel
                                 </button>
                               </div>
-                            ) : (
-                              <label className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg cursor-pointer text-[10px] font-bold flex items-center gap-1 shrink-0">
-                                <Upload className="h-3 w-3" />
-                                <input
-                                  ref={editCatFileRef}
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleImageCompress(file, setEditingCatImage, setIsUploadingEditCat);
-                                  }}
-                                  className="hidden"
-                                />
-                              </label>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleSaveEditCategory(cat.id)}
-                              className="p-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg cursor-pointer"
-                              title="Save Changes"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingCatId(null)}
-                              className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg cursor-pointer"
-                              title="Cancel"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
+                            </div>
                           </div>
                         ) : (
                           <div>
-                            <h4 className="text-sm font-bold text-slate-900">
-                              {cat.name}
-                            </h4>
-                            <span className="text-[11px] text-slate-400">
-                              ID: {cat.id}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-bold text-slate-900">
+                                {cat.name}
+                              </h4>
+                              {cat.banglaName && (
+                                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                  {cat.banglaName}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                              <span>ID: {cat.id}</span>
+                              {cat.productOrder && cat.productOrder !== 'default' && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-emerald-600 font-semibold">Order: {cat.productOrder}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Right: Subcategory Count Badge + Product Count + Actions */}
-                      <div className="flex items-center gap-4 shrink-0">
+                      {/* Right: Sort Order badge / input + Subcategory Count + Actions */}
+                      <div className="flex items-center gap-4 shrink-0 justify-between md:justify-end">
+                        {/* Priority / Sort Order display */}
+                        <div className="flex items-center gap-1.5 bg-slate-100/80 px-2.5 py-1 rounded-xl border border-slate-200">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority:</span>
+                          <input
+                            type="number"
+                            value={cat.order ?? idx}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              if (Number.isFinite(val)) {
+                                handleQuickUpdateSortOrder(cat.id, val);
+                              }
+                            }}
+                            className="w-12 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-black text-slate-800 outline-none focus:ring-1 focus:ring-[#2563eb]"
+                            title="Directly edit priority sort order"
+                          />
+                        </div>
+
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -1164,7 +1362,7 @@ export default function CategoryManager() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-1 w-20 justify-end">
+                        <div className="flex items-center gap-1 w-16 justify-end">
                           <button
                             type="button"
                             onClick={() => handleStartEditCategory(cat)}
@@ -1214,7 +1412,7 @@ export default function CategoryManager() {
                 <select
                   value={selectedParentCategoryFilter}
                   onChange={(e) => setSelectedParentCategoryFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all cursor-pointer"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all cursor-pointer"
                 >
                   <option value="all">All Parent Categories ({allSubcategories.length})</option>
                   {categoryItems.map(c => (
@@ -1233,7 +1431,7 @@ export default function CategoryManager() {
                   placeholder="Search subcategories..."
                   value={subcategorySearch}
                   onChange={(e) => setSubcategorySearch(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all placeholder:text-slate-400"
                 />
                 {subcategorySearch && (
                   <button
@@ -1259,7 +1457,7 @@ export default function CategoryManager() {
                   setIsAddSubcategoryOpen(true);
                 }}
                 disabled={categoryItems.length === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add Subcategory</span>
@@ -1269,7 +1467,7 @@ export default function CategoryManager() {
 
           {/* Add Subcategory Form */}
           {isAddSubcategoryOpen && (
-            <div className="bg-white border-2 border-[#16a34a]/30 rounded-2xl p-5 shadow-sm space-y-4 animate-in slide-in-from-top-3 duration-200">
+            <div className="bg-white border-2 border-[#2563eb]/30 rounded-2xl p-5 shadow-sm space-y-4 animate-in slide-in-from-top-3 duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-green-50 text-green-700 rounded-lg">
@@ -1299,7 +1497,7 @@ export default function CategoryManager() {
                     <select
                       value={newSubParentCatId}
                       onChange={(e) => setNewSubParentCatId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all cursor-pointer"
                       required
                     >
                       {categoryItems.map(c => (
@@ -1320,7 +1518,7 @@ export default function CategoryManager() {
                       placeholder="e.g. Salwar Kameez, Baby Frock..."
                       value={newSubName}
                       onChange={(e) => setNewSubName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all placeholder:text-slate-400"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all placeholder:text-slate-400"
                       autoFocus
                     />
                   </div>
@@ -1376,7 +1574,7 @@ export default function CategoryManager() {
                   <button
                     type="submit"
                     disabled={!newSubName.trim() || !newSubParentCatId}
-                    className="px-5 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    className="px-5 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                   >
                     Save Subcategory
                   </button>
@@ -1412,7 +1610,7 @@ export default function CategoryManager() {
                           <button
                             type="button"
                             onClick={() => handleMoveSubcategory(sub.categoryId, sub.id, 'up')}
-                            className="p-1 text-slate-400 hover:text-[#16a34a] hover:bg-green-50 rounded cursor-pointer transition-colors"
+                            className="p-1 text-slate-400 hover:text-[#2563eb] hover:bg-green-50 rounded cursor-pointer transition-colors"
                             title="Move Up"
                           >
                             <ArrowUp className="h-3 w-3" />
@@ -1420,7 +1618,7 @@ export default function CategoryManager() {
                           <button
                             type="button"
                             onClick={() => handleMoveSubcategory(sub.categoryId, sub.id, 'down')}
-                            className="p-1 text-slate-400 hover:text-[#16a34a] hover:bg-green-50 rounded cursor-pointer transition-colors"
+                            className="p-1 text-slate-400 hover:text-[#2563eb] hover:bg-green-50 rounded cursor-pointer transition-colors"
                             title="Move Down"
                           >
                             <ArrowDown className="h-3 w-3" />
@@ -1529,7 +1727,7 @@ export default function CategoryManager() {
                 <select
                   value={editingSub.targetCatId}
                   onChange={(e) => setEditingSub({ ...editingSub, targetCatId: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all cursor-pointer"
                 >
                   {categoryItems.map(c => (
                     <option key={c.id} value={c.id}>
@@ -1547,7 +1745,7 @@ export default function CategoryManager() {
                   type="text"
                   value={editingSub.name}
                   onChange={(e) => setEditingSub({ ...editingSub, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#16a34a]/20 focus:border-[#16a34a] outline-none transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] outline-none transition-all"
                   autoFocus
                 />
               </div>
@@ -1609,7 +1807,7 @@ export default function CategoryManager() {
                 type="button"
                 onClick={handleSaveEditSubcategory}
                 disabled={!editingSub.name.trim()}
-                className="px-5 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 Save Changes
               </button>

@@ -9,7 +9,7 @@ import {
   Phone, Mail, Globe, Droplet, Sun, Moon, Zap, Flame, Layers, MessageCircle, ArrowUp, MapPin, ZoomIn, Clock,
   Building2, BookOpen, Microscope, Quote, Sprout, FlaskConical, CreditCard, Smartphone, Copy, Tag,
   Play, Pause, Volume2, VolumeX, Menu, CheckCircle2, AlertCircle, Info, Trash2,
-  Home, LayoutGrid, ShoppingCart
+  Home, LayoutGrid, ShoppingCart, Package
 } from 'lucide-react';
 import { trackEvent, createEventId } from '../lib/pixelGtmService';
 import { Product, BookOrder, EcomSettings, InstituteInfo, ContactMessage, AboutPageSettings, DeliveryMethodItem, PaymentGatewayItem, Coupon, HeaderSettings, HeroBannerItem, Brand, CategoryItem, SubCategoryItem } from '../types';
@@ -44,6 +44,8 @@ import SimpleAuth from './SimpleAuth';
 const CheckoutPage = React.lazy(() => import('./CheckoutPage'));
 const AboutUsPage = React.lazy(() => import('./AboutUsPage'));
 const StoreFooter = React.lazy(() => import('./StoreFooter'));
+const AddressModal = React.lazy(() => import('./AddressModal'));
+const CustomerOrdersView = React.lazy(() => import('./CustomerOrdersView'));
 
 interface StorefrontPageProps {
   onGoToLogin?: () => void;
@@ -276,14 +278,14 @@ function AutoScrollCategorySection({
                 </span>
               )}
             </h2>
-            <div className="absolute -bottom-[11px] left-0 w-16 sm:w-20 h-[3px] bg-[#16a34a] rounded-full" />
+            <div className="absolute -bottom-[11px] left-0 w-16 sm:w-20 h-[3px] bg-[#2563eb] rounded-full" />
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => scrollByDirection('left')}
-              className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#16a34a] hover:bg-[#16a34a] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
+              className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#2563eb] hover:bg-[#2563eb] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
               aria-label="Previous"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -291,7 +293,7 @@ function AutoScrollCategorySection({
             <button
               type="button"
               onClick={() => scrollByDirection('right')}
-              className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#16a34a] hover:bg-[#16a34a] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
+              className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#2563eb] hover:bg-[#2563eb] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
               aria-label="Next"
             >
               <ChevronRight className="w-4 h-4" />
@@ -299,7 +301,7 @@ function AutoScrollCategorySection({
             <button
               type="button"
               onClick={onViewAll}
-              className="inline-flex items-center gap-1 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a] hover:text-white text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer group shrink-0"
+              className="inline-flex items-center gap-1 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-[#2563eb] text-[#2563eb] hover:bg-[#2563eb] hover:text-white text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer group shrink-0"
             >
               <span>View All</span>
               <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -335,7 +337,7 @@ function AutoScrollCategorySection({
               <div className="p-3 sm:p-3.5 flex flex-col justify-between flex-1 bg-white">
                 <div>
                   <h3
-                    className="text-xs sm:text-[13px] font-medium text-slate-800 group-hover:text-[#16a34a] transition-colors line-clamp-2 leading-snug min-h-[36px]"
+                    className="text-xs sm:text-[13px] font-medium text-slate-800 group-hover:text-[#2563eb] transition-colors line-clamp-2 leading-snug min-h-[36px]"
                     title={product.title}
                   >
                     {product.title}
@@ -353,7 +355,7 @@ function AutoScrollCategorySection({
                     e.stopPropagation();
                     onOrderClick(product);
                   }}
-                  className="w-full py-2 sm:py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center tracking-wide"
+                  className="w-full py-2 sm:py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center tracking-wide"
                 >
                   Order Now
                 </button>
@@ -386,10 +388,12 @@ function AutoScrollCategorySection({
 // Our Brands Carousel Component
 function OurBrandsSection({
   brands,
-  onBrandClick
+  onBrandClick,
+  onViewAll
 }: {
   brands: any[];
   onBrandClick: (name: string) => void;
+  onViewAll?: () => void;
 }) {
   const brandScrollRef = useRef<HTMLDivElement>(null);
 
@@ -406,31 +410,30 @@ function OurBrandsSection({
           <div className="relative inline-block min-w-0 pr-2">
             <h2 className="text-base sm:text-2xl font-black text-slate-900 tracking-wider uppercase font-sans flex items-center gap-2">
               <span className="whitespace-nowrap">OUR BRANDS</span>
-              <span className="hidden sm:inline-block text-xs sm:text-sm font-bold bg-[#16a34a]/10 text-[#16a34a] px-2.5 py-0.5 rounded-md whitespace-nowrap">
+              <span className="hidden sm:inline-block text-xs sm:text-sm font-bold bg-[#2563eb]/10 text-[#2563eb] px-2.5 py-0.5 rounded-md whitespace-nowrap">
                 Official Brands
               </span>
             </h2>
-            <div className="absolute -bottom-[11px] left-0 w-16 sm:w-20 h-[3px] bg-[#16a34a] rounded-full" />
+            <div className="absolute -bottom-[11px] left-0 w-16 sm:w-20 h-[3px] bg-[#2563eb] rounded-full" />
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedBrand('All');
-              navigateTo('shop');
-            }}
-            className="inline-flex items-center gap-1 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a] hover:text-white text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer group shrink-0"
-          >
-            <span>View All</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </button>
+          {onViewAll && (
+            <button
+              type="button"
+              onClick={onViewAll}
+              className="inline-flex items-center gap-1 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-[#2563eb] text-[#2563eb] hover:bg-[#2563eb] hover:text-white text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer group shrink-0"
+            >
+              <span>View All</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </button>
+          )}
         </div>
 
         <div className="relative group/brands">
           <button
             type="button"
             onClick={() => scrollBrands('left')}
-            className="absolute -left-2 sm:-left-3.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#16a34a] hover:bg-[#15803d] text-white flex items-center justify-center shadow-md transition-all cursor-pointer active:scale-95"
+            className="absolute -left-2 sm:-left-3.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center shadow-md transition-all cursor-pointer active:scale-95"
             aria-label="Previous brands"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
@@ -439,7 +442,7 @@ function OurBrandsSection({
           <button
             type="button"
             onClick={() => scrollBrands('right')}
-            className="absolute -right-2 sm:-right-3.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#16a34a] hover:bg-[#15803d] text-white flex items-center justify-center shadow-md transition-all cursor-pointer active:scale-95"
+            className="absolute -right-2 sm:-right-3.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center shadow-md transition-all cursor-pointer active:scale-95"
             aria-label="Next brands"
           >
             <ChevronRight className="w-5 h-5 text-white" />
@@ -453,7 +456,7 @@ function OurBrandsSection({
               <div
                 key={idx}
                 onClick={() => onBrandClick(brand.name)}
-                className="bg-white border border-slate-200/90 hover:border-[#16a34a] hover:shadow-md rounded-xl p-4 flex flex-col items-center justify-center h-28 sm:h-32 min-w-[170px] sm:min-w-[190px] shrink-0 cursor-pointer transition-all group select-none"
+                className="bg-white border border-slate-200/90 hover:border-[#2563eb] hover:shadow-md rounded-xl p-4 flex flex-col items-center justify-center h-28 sm:h-32 min-w-[170px] sm:min-w-[190px] shrink-0 cursor-pointer transition-all group select-none"
               >
                 <div className="h-12 sm:h-14 flex items-center justify-center">
                   {brand.logo ? (
@@ -470,7 +473,7 @@ function OurBrandsSection({
                     </div>
                   )}
                 </div>
-                <span className="text-xs sm:text-[13px] font-bold text-[#16a34a] group-hover:text-[#15803d] text-center mt-2.5 truncate max-w-full">
+                <span className="text-xs sm:text-[13px] font-bold text-[#2563eb] group-hover:text-[#1d4ed8] text-center mt-2.5 truncate max-w-full">
                   {brand.name}
                 </span>
               </div>
@@ -487,10 +490,11 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
   const location = useLocation();
   const { id: routeId, slug: routeSlug } = useParams<{ id?: string; slug?: string }>();
 
-  // Navigation View: 'home' | 'shop' | 'about' | 'contact' | 'product_detail' | 'checkout' | 'blog' | 'blog_post'
-  const [activeNav, setActiveNav] = useState<'home' | 'shop' | 'about' | 'contact' | 'product_detail' | 'checkout' | 'collections'>(() => {
+  // Navigation View: 'home' | 'shop' | 'about' | 'contact' | 'product_detail' | 'checkout' | 'collections' | 'orders'
+  const [activeNav, setActiveNav] = useState<'home' | 'shop' | 'about' | 'contact' | 'product_detail' | 'checkout' | 'collections' | 'orders'>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname;
+      if (p.startsWith('/orders') || p.startsWith('/account/orders')) return 'orders';
       if (p.startsWith('/collections') || p.startsWith('/collection')) return 'collections';
       if (p.startsWith('/product')) return 'product_detail';
       if (p.startsWith('/shop')) return 'shop';
@@ -499,6 +503,22 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       if (p.startsWith('/checkout')) return 'checkout';
     }
     return 'home';
+  });
+
+  // Dynamic Address Management Modal State (matching Arogga)
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [selectedCustomerAddress, setSelectedCustomerAddress] = useState<any>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = localStorage.getItem('customer_saved_addresses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.find((a: any) => a.isDefault) || parsed[0];
+        }
+      }
+    } catch {}
+    return null;
   });
   const [selectedCategoryCheckbox, setSelectedCategoryCheckbox] = useState<string>('All');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('All');
@@ -916,10 +936,11 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Dynamic Real Backend Categories for Horizontal Category Strip
+  // Dynamic Real Backend Categories for Horizontal Category Strip (sorted by priority / sort order)
   const shoppingCategories = useMemo(() => {
     if (Array.isArray(realCategoryItems) && realCategoryItems.length > 0) {
-      return realCategoryItems.map(cat => {
+      const sorted = [...realCategoryItems].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      return sorted.map(cat => {
         const catProds = (products || []).filter(p => (p.category || '').toLowerCase().trim() === cat.name.toLowerCase().trim());
         const catImg = cat.image || catProds[0]?.images?.[0] || catProds[0]?.image || '';
         return {
@@ -1369,39 +1390,81 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
     }
   };
 
-  // Dynamic Flash Sale Countdown Hook
+  // Dynamic Flash Sale Countdown & Pricing Hook
   const flashSaleConfig = ecomSettings?.flashSale;
-  const [flashSaleTimeLeft, setFlashSaleTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
+  const [flashSaleTimeLeft, setFlashSaleTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number; isLive: boolean }>({
     days: 0,
     hours: 0,
     minutes: 0,
-    seconds: 0
+    seconds: 0,
+    isLive: false
   });
 
   useEffect(() => {
     const calculateTime = () => {
-      const endDateStr = flashSaleConfig?.endDate;
-      if (!endDateStr) {
-        setFlashSaleTimeLeft({ days: 6, hours: 23, minutes: 59, seconds: 59 });
+      if (!flashSaleConfig?.enabled) {
+        setFlashSaleTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false });
         return;
       }
-      const diff = +new Date(endDateStr) - +new Date();
+      const endDateStr = flashSaleConfig?.endDate;
+      const startDateStr = flashSaleConfig?.startDate;
+      const now = +new Date();
+
+      if (startDateStr && now < +new Date(startDateStr)) {
+        // Not started yet
+        setFlashSaleTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false });
+        return;
+      }
+
+      if (!endDateStr) {
+        setFlashSaleTimeLeft({ days: 6, hours: 23, minutes: 59, seconds: 59, isLive: true });
+        return;
+      }
+
+      const diff = +new Date(endDateStr) - now;
       if (diff > 0) {
         setFlashSaleTimeLeft({
           days: Math.floor(diff / (1000 * 60 * 60 * 24)),
           hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((diff / 1000 / 60) % 60),
-          seconds: Math.floor((diff / 1000) % 60)
+          seconds: Math.floor((diff / 1000) % 60),
+          isLive: true
         });
       } else {
-        setFlashSaleTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setFlashSaleTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false });
       }
     };
 
     calculateTime();
     const timer = setInterval(calculateTime, 1000);
     return () => clearInterval(timer);
-  }, [flashSaleConfig?.endDate]);
+  }, [flashSaleConfig?.endDate, flashSaleConfig?.startDate, flashSaleConfig?.enabled]);
+
+  // Map of active flash sale prices for instant lookup
+  const flashSalePriceMap = useMemo(() => {
+    const map = new Map<string, { flashPrice: number; originalPrice: number }>();
+    if (!flashSaleTimeLeft.isLive || !flashSaleConfig?.enabled) return map;
+
+    const items = flashSaleConfig.items || [];
+    items.forEach(item => {
+      if (item.productId && item.flashPrice > 0) {
+        map.set(item.productId, {
+          flashPrice: item.flashPrice,
+          originalPrice: item.originalPrice || 0
+        });
+      }
+    });
+
+    // Backward compatibility for legacy single product flash sale
+    if (items.length === 0 && flashSaleConfig.productId && (flashSaleConfig.flashPrice || 0) > 0) {
+      map.set(flashSaleConfig.productId, {
+        flashPrice: flashSaleConfig.flashPrice || 0,
+        originalPrice: flashSaleConfig.originalPrice || 0
+      });
+    }
+
+    return map;
+  }, [flashSaleConfig, flashSaleTimeLeft.isLive]);
 
   // Dynamic Favicon and Document Title Sync
   useEffect(() => {
@@ -1525,9 +1588,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
   }, []);
 
   // Central Router Navigation Helper (Syncs Browser URL with SPA Views)
-  const navigateTo = useCallback((section: 'home' | 'shop' | 'about' | 'contact' | 'checkout' | 'collections') => {
+  const navigateTo = useCallback((section: 'home' | 'shop' | 'about' | 'contact' | 'checkout' | 'collections' | 'orders') => {
     setIsMobileMenuOpen(false);
-    const targetPath = section === 'home' ? '/' : `/${section}`;
+    const targetPath = section === 'home' ? '/' : (section === 'orders' ? '/account/orders' : `/${section}`);
     if (location.pathname !== targetPath) {
       navigate(targetPath);
     }
@@ -1568,6 +1631,8 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       setActiveNav('contact');
     } else if (path.startsWith('/checkout')) {
       setActiveNav('checkout');
+    } else if (path.startsWith('/orders') || path.startsWith('/account/orders')) {
+      setActiveNav('orders');
     } else if (path.startsWith('/blog') || path.startsWith('/blogs') || path.startsWith('/news') || path.startsWith('/membership') || path.startsWith('/vip')) {
       navigate('/');
       setActiveNav('home');
@@ -1583,32 +1648,47 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
     return `Tk.${bdtAmount.toLocaleString('en-US')}`;
   };
 
-  // Add to Cart Helper
+  // Add to Cart Helper (with dynamic Flash Sale pricing support)
   const handleAddToCart = useCallback((product: Product, quantity = 1, variant?: any) => {
     const eventId = createEventId('cart');
-    const finalPrice = variant?.price || product.price || 0;
+
+    // Check if product is in an active flash sale
+    const flashInfo = flashSalePriceMap.get(product.id);
+    const activeEffectivePrice = (!variant && flashInfo && flashInfo.flashPrice > 0)
+      ? flashInfo.flashPrice
+      : (variant?.price || product.price || 0);
+
+    const productForCart: Product = {
+      ...product,
+      price: activeEffectivePrice,
+      regularPrice: (!variant && flashInfo && flashInfo.originalPrice > 0)
+        ? flashInfo.originalPrice
+        : (product.regularPrice || product.price)
+    };
+
     trackEvent('AddToCart', {
       content_name: product.title,
       content_ids: [product.id],
       content_type: 'product',
-      value: finalPrice * quantity,
+      value: activeEffectivePrice * quantity,
       currency: 'BDT',
       num_items: quantity,
       contents: [{
         id: product.id,
         name: product.title,
         quantity: quantity,
-        item_price: finalPrice
+        item_price: activeEffectivePrice
       }]
     }, eventId);
+
     addToCartAction({
-      product,
+      product: productForCart,
       quantity,
       variant,
       selectedVariant: variant?.name
     });
     showToast(`Added ${product.title}${variant ? ` (${variant.name})` : ''} to your bag.`, 'success');
-  }, [addToCartAction, showToast]);
+  }, [addToCartAction, showToast, flashSalePriceMap]);
 
   const handleRemoveFromCart = useCallback((productId: string) => {
     removeFromCartAction(productId);
@@ -1699,7 +1779,8 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       }
     };
     if (Array.isArray(realCategoryItems) && realCategoryItems.length > 0) {
-      realCategoryItems.forEach(c => add(c.name));
+      const sorted = [...realCategoryItems].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      sorted.forEach(c => add(c.name));
     }
     if (Array.isArray(realCategories)) realCategories.forEach((c: any) => add(typeof c === 'string' ? c : c?.name));
     if (Array.isArray(ecomSettings?.categories)) ecomSettings.categories.forEach((c: any) => add(typeof c === 'string' ? c : c?.name));
@@ -2205,9 +2286,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           >
             {/* Store Logo Image */}
             {storeLogoFailed ? (
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#16a34a] text-white flex items-center justify-center shadow-xs shrink-0">
-                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
+              <span className="font-brand-logo font-black text-sm sm:text-xl md:text-2xl tracking-tight text-[#2563eb] group-hover:text-[#1d4ed8] transition-colors whitespace-nowrap leading-none select-none">
+                {displayStoreName ? displayStoreName.toUpperCase() : 'SAVARIA BD'}
+              </span>
             ) : (
               <img 
                 src={displayStoreLogo || liveHeaderSettings.logoUrl || '/uploads/file-1793773029433-548634670.webp'} 
@@ -2216,9 +2297,28 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 onError={() => setStoreLogoFailed(true)}
               />
             )}
-            <span className="font-brand-logo font-black text-sm sm:text-xl md:text-2xl tracking-tight text-[#16a34a] group-hover:text-[#15803d] transition-colors whitespace-nowrap leading-none select-none">
-              {displayStoreName ? displayStoreName.toUpperCase() : 'MEGH BRISTI FASHION'}
-            </span>
+          </div>
+
+          {/* Dynamic "Delivery To" Address Selector (Matching Arogga - Screenshots 2 & 5) */}
+          <div 
+            onClick={() => setIsAddressModalOpen(true)}
+            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200/90 hover:border-teal-600 hover:bg-teal-50/20 cursor-pointer transition select-none group max-w-[210px]"
+            title="Click to change or add delivery address"
+          >
+            <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 group-hover:bg-teal-100">
+              <MapPin className="w-4 h-4 text-teal-700" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none">
+                Delivery To
+              </span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-xs font-black text-slate-800 truncate block">
+                  {selectedCustomerAddress ? (selectedCustomerAddress.address || selectedCustomerAddress.deliveryArea) : 'Set Address...'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-teal-700 transition-transform" />
+              </div>
+            </div>
           </div>
 
           {/* Desktop Search Bar (Center - hidden on mobile) */}
@@ -2229,7 +2329,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 setIsSearchDropdownOpen(false);
                 navigateTo('shop');
               }}
-              className="relative flex items-center w-full border border-[#16a34a] rounded-md overflow-hidden bg-white shadow-2xs"
+              className="relative flex items-center w-full border border-[#2563eb] rounded-md overflow-hidden bg-white shadow-2xs"
             >
               <input
                 type="text"
@@ -2244,7 +2344,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               />
               <button
                 type="submit"
-                className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 aria-label="Search"
               >
                 <Search className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -2272,7 +2372,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-slate-800 truncate">{p.title}</p>
-                          <p className="text-[11px] text-[#16a34a] font-bold">Tk. {Number(p.price).toLocaleString('en-US')}</p>
+                          <p className="text-[11px] text-[#2563eb] font-bold">Tk. {Number(p.price).toLocaleString('en-US')}</p>
                         </div>
                       </div>
                     ))}
@@ -2282,7 +2382,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         setIsSearchDropdownOpen(false);
                         navigateTo('shop');
                       }}
-                      className="w-full py-2 text-center text-xs font-bold text-[#16a34a] hover:bg-green-50 transition-colors cursor-pointer"
+                      className="w-full py-2 text-center text-xs font-bold text-[#2563eb] hover:bg-green-50 transition-colors cursor-pointer"
                     >
                       View all {searchOutput.length} products →
                     </button>
@@ -2302,7 +2402,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             <button
               type="button"
               onClick={() => setIsTrackOrderModalOpen(true)}
-              className="p-1.5 text-slate-700 hover:text-[#16a34a] rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-slate-700 hover:text-[#2563eb] rounded-lg transition-colors cursor-pointer"
               title="Track Order"
               aria-label="Track Order"
             >
@@ -2313,13 +2413,13 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="relative p-1.5 text-slate-700 hover:text-[#16a34a] rounded-lg transition-colors cursor-pointer"
+              className="relative p-1.5 text-slate-700 hover:text-[#2563eb] rounded-lg transition-colors cursor-pointer"
               title="Shopping Cart"
               aria-label="Shopping Cart"
             >
               <ShoppingCart className="w-5 h-5" strokeWidth={1.75} />
               {totalCartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#16a34a] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                <span className="absolute -top-0.5 -right-0.5 bg-[#2563eb] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
                   {totalCartCount}
                 </span>
               )}
@@ -2329,7 +2429,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             <button
               type="button"
               onClick={() => onGoToLogin ? onGoToLogin() : navigate('/login')}
-              className="p-1.5 text-slate-700 hover:text-[#16a34a] rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-slate-700 hover:text-[#2563eb] rounded-lg transition-colors cursor-pointer"
               title="Account"
               aria-label="Account"
             >
@@ -2337,16 +2437,31 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             </button>
           </div>
 
-          {/* Desktop Right Action Icons: Track Order, Sign In, Cart, More */}
+          {/* Desktop Right Action Icons: Track Order, Orders, Sign In, Cart, More */}
           <div className="hidden sm:flex items-center gap-3 sm:gap-6 md:gap-7 shrink-0">
+            {/* Orders Icon (matching Screenshot 4 - arogga.com/account/orders) */}
+            <button
+              type="button"
+              onClick={() => navigateTo('orders')}
+              className={`flex flex-col items-center justify-center transition-colors cursor-pointer group ${
+                activeNav === 'orders' ? 'text-teal-700' : 'text-slate-800 hover:text-[#2563eb]'
+              }`}
+              title="My Orders"
+            >
+              <Package className="w-5 h-5 transition-colors" strokeWidth={1.75} />
+              <span className="text-[10px] sm:text-xs font-normal mt-0.5 whitespace-nowrap">
+                Orders
+              </span>
+            </button>
+
             {/* 1. Track Order */}
             <button
               type="button"
               onClick={() => setIsTrackOrderModalOpen(true)}
-              className="flex flex-col items-center justify-center text-slate-800 hover:text-[#16a34a] transition-colors cursor-pointer group"
+              className="flex flex-col items-center justify-center text-slate-800 hover:text-[#2563eb] transition-colors cursor-pointer group"
             >
-              <MapPin className="w-5 h-5 text-slate-800 group-hover:text-[#16a34a] transition-colors" strokeWidth={1.75} />
-              <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#16a34a] mt-0.5 whitespace-nowrap">
+              <MapPin className="w-5 h-5 text-slate-800 group-hover:text-[#2563eb] transition-colors" strokeWidth={1.75} />
+              <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#2563eb] mt-0.5 whitespace-nowrap">
                 Track Order
               </span>
             </button>
@@ -2355,10 +2470,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             <button
               type="button"
               onClick={() => onGoToLogin ? onGoToLogin() : navigate('/login')}
-              className="flex flex-col items-center justify-center text-slate-800 hover:text-[#16a34a] transition-colors cursor-pointer group"
+              className="flex flex-col items-center justify-center text-slate-800 hover:text-[#2563eb] transition-colors cursor-pointer group"
             >
-              <User className="w-5 h-5 text-slate-800 group-hover:text-[#16a34a] transition-colors" strokeWidth={1.75} />
-              <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#16a34a] mt-0.5 whitespace-nowrap max-w-[65px] truncate">
+              <User className="w-5 h-5 text-slate-800 group-hover:text-[#2563eb] transition-colors" strokeWidth={1.75} />
+              <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#2563eb] mt-0.5 whitespace-nowrap max-w-[65px] truncate">
                 {customerSession ? (customerSession.name?.split(' ')[0] || 'Account') : 'Sign In'}
               </span>
             </button>
@@ -2367,15 +2482,15 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="relative flex flex-col items-center justify-center text-slate-800 hover:text-[#16a34a] transition-colors cursor-pointer group"
+              className="relative flex flex-col items-center justify-center text-slate-800 hover:text-[#2563eb] transition-colors cursor-pointer group"
             >
               <div className="relative">
-                <ShoppingCart className="w-5 h-5 text-slate-800 group-hover:text-[#16a34a] transition-colors" strokeWidth={1.75} />
-                <span className="absolute -top-1.5 -right-2.5 bg-[#16a34a] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                <ShoppingCart className="w-5 h-5 text-slate-800 group-hover:text-[#2563eb] transition-colors" strokeWidth={1.75} />
+                <span className="absolute -top-1.5 -right-2.5 bg-[#2563eb] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
                   {totalCartCount}
                 </span>
               </div>
-              <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#16a34a] mt-0.5 whitespace-nowrap">
+              <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#2563eb] mt-0.5 whitespace-nowrap">
                 Cart
               </span>
             </button>
@@ -2385,10 +2500,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               <button
                 type="button"
                 onClick={() => setIsMoreDropdownOpen(prev => !prev)}
-                className="flex flex-col items-center justify-center text-slate-800 hover:text-[#16a34a] transition-colors cursor-pointer group"
+                className="flex flex-col items-center justify-center text-slate-800 hover:text-[#2563eb] transition-colors cursor-pointer group"
               >
-                <Menu className="w-5 h-5 text-slate-800 group-hover:text-[#16a34a] transition-colors" strokeWidth={1.75} />
-                <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#16a34a] mt-0.5 whitespace-nowrap">
+                <Menu className="w-5 h-5 text-slate-800 group-hover:text-[#2563eb] transition-colors" strokeWidth={1.75} />
+                <span className="text-[10px] sm:text-xs font-normal text-slate-800 group-hover:text-[#2563eb] mt-0.5 whitespace-nowrap">
                   More
                 </span>
               </button>
@@ -2400,9 +2515,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       setIsMoreDropdownOpen(false);
                       setIsTrackOrderModalOpen(true);
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-green-50 hover:text-[#16a34a] flex items-center gap-2 font-medium"
+                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-green-50 hover:text-[#2563eb] flex items-center gap-2 font-medium"
                   >
-                    <MapPin className="w-4 h-4 text-[#16a34a]" />
+                    <MapPin className="w-4 h-4 text-[#2563eb]" />
                     <span>Track Order</span>
                   </button>
                   <button
@@ -2410,9 +2525,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       setIsMoreDropdownOpen(false);
                       navigateTo('about');
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-green-50 hover:text-[#16a34a] flex items-center gap-2 font-medium"
+                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-green-50 hover:text-[#2563eb] flex items-center gap-2 font-medium"
                   >
-                    <Building2 className="w-4 h-4 text-[#16a34a]" />
+                    <Building2 className="w-4 h-4 text-[#2563eb]" />
                     <span>About Us</span>
                   </button>
                   <button
@@ -2420,9 +2535,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       setIsMoreDropdownOpen(false);
                       navigateTo('contact');
                     }}
-                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-green-50 hover:text-[#16a34a] flex items-center gap-2 font-medium"
+                    className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-green-50 hover:text-[#2563eb] flex items-center gap-2 font-medium"
                   >
-                    <Phone className="w-4 h-4 text-[#16a34a]" />
+                    <Phone className="w-4 h-4 text-[#2563eb]" />
                     <span>Contact & Helpline</span>
                   </button>
                   <a
@@ -2449,7 +2564,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               setIsSearchDropdownOpen(false);
               navigateTo('shop');
             }}
-            className="relative flex items-center w-full border border-[#16a34a] rounded-lg overflow-hidden bg-white shadow-2xs"
+            className="relative flex items-center w-full border border-[#2563eb] rounded-lg overflow-hidden bg-white shadow-2xs"
           >
             <input
               type="text"
@@ -2464,7 +2579,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             />
             <button
               type="submit"
-              className="px-3.5 py-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              className="px-3.5 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
               aria-label="Search"
             >
               <Search className="w-4 h-4 text-white" />
@@ -2492,7 +2607,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-slate-800 truncate">{p.title}</p>
-                        <p className="text-[11px] text-[#16a34a] font-bold">Tk. {Number(p.price).toLocaleString('en-US')}</p>
+                        <p className="text-[11px] text-[#2563eb] font-bold">Tk. {Number(p.price).toLocaleString('en-US')}</p>
                       </div>
                     </div>
                   ))}
@@ -2502,7 +2617,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       setIsSearchDropdownOpen(false);
                       navigateTo('shop');
                     }}
-                    className="w-full py-2 text-center text-xs font-bold text-[#16a34a] hover:bg-green-50 transition-colors cursor-pointer"
+                    className="w-full py-2 text-center text-xs font-bold text-[#2563eb] hover:bg-green-50 transition-colors cursor-pointer"
                   >
                     View all {searchOutput.length} products →
                   </button>
@@ -2596,7 +2711,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                 setSelectedSubcategory(sub.name);
                                 navigateTo('shop');
                               }}
-                              className="w-full text-left px-4 py-2 text-xs hover:bg-green-50 hover:text-[#16a34a] transition-colors flex items-center justify-between cursor-pointer"
+                              className="w-full text-left px-4 py-2 text-xs hover:bg-green-50 hover:text-[#2563eb] transition-colors flex items-center justify-between cursor-pointer"
                             >
                               <span>{sub.name}</span>
                               <span className="text-[10px] text-slate-300">→</span>
@@ -2618,7 +2733,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       {isTrackOrderModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 relative animate-in zoom-in-95 duration-200">
-            <div className="p-4 bg-gradient-to-r from-[#16a34a] to-amber-500 text-white flex items-center justify-between">
+            <div className="p-4 bg-gradient-to-r from-[#2563eb] to-amber-500 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-white" />
                 <h3 className="font-bold text-base">Track Your Order</h3>
@@ -2756,6 +2871,27 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 </button>
               </div>
 
+              {/* PDF Sample Reader Button (Matching Reference Image) */}
+              {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0)) && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeProductDetail.samplePdfUrl) {
+                        window.open(activeProductDetail.samplePdfUrl, '_blank');
+                      } else if (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) {
+                        setZoomModalImage(activeProductDetail.samplePages[0]);
+                        setIsZoomModalOpen(true);
+                      }
+                    }}
+                    className="w-full py-3 px-4 bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm sm:text-base rounded-xl transition shadow-md active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <BookOpen className="w-5 h-5 text-white" />
+                    <span>পিডিএফ স্যাম্পল পড়ে দেখুন</span>
+                  </button>
+                </div>
+              )}
+
               {/* Bottom Thumbnail Strip Carousel */}
               {currentProductImages.length > 1 && (
                 <div className="flex items-center gap-2 pt-1">
@@ -2776,7 +2912,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         onClick={() => setActiveImageIndex(idx)}
                         className={`w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer p-0.5 bg-white ${
                           activeImageIndex === idx 
-                            ? 'border-[#16a34a] shadow-sm' 
+                            ? 'border-[#2563eb] shadow-sm' 
                             : 'border-slate-200 hover:border-slate-300'
                         }`}
                       >
@@ -2822,7 +2958,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100/90 border border-slate-200 rounded-md text-xs select-none">
                     <span className="font-mono text-slate-400 font-bold tracking-widest text-[11px]">||||</span>
                     <span className="text-slate-600 font-medium">Code:</span>
-                    <span className="font-mono font-bold text-[#16a34a]">{productCode}</span>
+                    <span className="font-mono font-bold text-[#2563eb]">{productCode}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -2865,7 +3001,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       </span>
                     )}
                     {diff > 0 && (
-                      <span className="bg-[#dcfce7] text-[#15803d] font-bold text-xs px-2.5 py-0.5 rounded-full">
+                      <span className="bg-[#dcfce7] text-[#1d4ed8] font-bold text-xs px-2.5 py-0.5 rounded-full">
                         Save Tk. {diff.toLocaleString('en-US')}
                       </span>
                     )}
@@ -2899,7 +3035,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           ) : (
                             <span
                               className="w-full h-full rounded-full border border-black/10"
-                              style={{ backgroundColor: v.color || '#16a34a' }}
+                              style={{ backgroundColor: v.color || '#2563eb' }}
                             />
                           )}
                         </button>
@@ -2943,7 +3079,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     setIsCartOpen(false);
                     navigateTo('checkout');
                   }}
-                  className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-bold py-3 px-4 rounded-lg text-sm sm:text-base shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3 px-4 rounded-lg text-sm sm:text-base shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Zap className="w-4 h-4 fill-current shrink-0" />
                   <span>Order Now</span>
@@ -2959,20 +3095,31 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <span>Add to Cart</span>
                 </button>
 
-                {/* Button 3 (Bottom Left): 💬 WhatsApp / Helpline */}
-                <a 
-                  href={`https://wa.me/8801805035050?text=${encodeURIComponent(`Hello, I want to order: ${activeProductDetail.title}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-[#e6fbf2] hover:bg-[#d1fae5] border border-[#a7f3d0] text-emerald-800 font-bold py-2.5 px-4 rounded-lg text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                >
-                  <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-mono">01805-035050</span>
-                </a>
+                {/* Button 3 (Bottom Left): 💬 WhatsApp / Helpline (Dynamic from Store Profile) */}
+                {(() => {
+                  const rawWa = socialLinks?.whatsapp || liveHeaderSettings?.socialLinks?.whatsapp || headerPhone || displayPhone || '01635311494';
+                  const cleanWa = rawWa.replace(/[^0-9]/g, '');
+                  const formattedWa = cleanWa.startsWith('880') ? cleanWa.slice(2) : cleanWa;
+                  const displayWaNumber = formattedWa.length === 11 
+                    ? `${formattedWa.slice(0, 5)}-${formattedWa.slice(5)}` 
+                    : rawWa;
 
-                {/* Button 4 (Bottom Right): 📞 Call For Order */}
+                  return (
+                    <a 
+                      href={`https://wa.me/${cleanWa.startsWith('88') ? cleanWa : `88${cleanWa}`}?text=${encodeURIComponent(`Hello, I want to order: ${activeProductDetail.title}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-[#e6fbf2] hover:bg-[#d1fae5] border border-[#a7f3d0] text-emerald-800 font-bold py-2.5 px-4 rounded-lg text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    >
+                      <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="font-mono">{displayWaNumber}</span>
+                    </a>
+                  );
+                })()}
+
+                {/* Button 4 (Bottom Right): 📞 Call For Order (Dynamic from Store Profile) */}
                 <a 
-                  href={`tel:${headerPhone || '01406667669'}`}
+                  href={`tel:${headerPhone || displayPhone || '01635311494'}`}
                   className="w-full bg-[#eff6ff] hover:bg-[#dbeafe] border border-[#bfdbfe] text-blue-700 font-bold py-2.5 px-4 rounded-lg text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                 >
                   <Phone className="w-4 h-4 text-blue-600 shrink-0" />
@@ -3017,7 +3164,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             {activeProductDetail.description && (
               <div className="max-w-4xl mx-auto">
                 <div className="text-center sm:text-left mb-6">
-                  <span className="text-xs uppercase tracking-wider font-bold text-[#70b444] bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                  <span className="text-xs uppercase tracking-wider font-bold text-[#2563eb] bg-green-50 border border-green-200 px-3 py-1 rounded-full">
                     Product Description
                   </span>
                   <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-2 flex items-center justify-center sm:justify-start gap-2">
@@ -3103,7 +3250,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             <div className="mt-14 pt-10 border-t border-[#e8e4dc]">
               <div className="flex items-center justify-between mb-6 sm:mb-8">
                 <div>
-                  <span className="text-xs uppercase tracking-wider font-bold text-[#70b444] bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                  <span className="text-xs uppercase tracking-wider font-bold text-[#2563eb] bg-green-50 px-3 py-1 rounded-full border border-green-200">
                     Explore More
                   </span>
                   <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#1f1c19] mt-2">
@@ -3115,7 +3262,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     navigateTo('shop');
                     navigate('/shop');
                   }}
-                  className="text-xs sm:text-sm font-semibold text-[#70b444] hover:text-[#5ea134] flex items-center gap-1 group transition cursor-pointer"
+                  className="text-xs sm:text-sm font-semibold text-[#2563eb] hover:text-[#5ea134] flex items-center gap-1 group transition cursor-pointer"
                 >
                   View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -3126,7 +3273,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <div 
                     key={item.id}
                     onClick={() => openProductDetail(item)}
-                    className="group relative flex flex-col bg-white border border-[#e8e4dc] hover:border-[#70b444]/40 hover:shadow-xl transition-all duration-300 rounded-sm overflow-hidden select-none justify-between cursor-pointer"
+                    className="group relative flex flex-col bg-white border border-[#e8e4dc] hover:border-[#2563eb]/40 hover:shadow-xl transition-all duration-300 rounded-sm overflow-hidden select-none justify-between cursor-pointer"
                   >
                     <div className="relative aspect-[3/4] w-full bg-[#f8f7f5] overflow-hidden">
                       <img 
@@ -3141,7 +3288,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                       />
                       {item.discountPercentage ? (
-                        <div className="absolute top-2.5 right-2.5 z-10 bg-[#70b444] text-white text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-xs shadow-sm tracking-wider">
+                        <div className="absolute top-2.5 right-2.5 z-10 bg-[#2563eb] text-white text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-xs shadow-sm tracking-wider">
                           -{item.discountPercentage}%
                         </div>
                       ) : null}
@@ -3149,7 +3296,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                     <div className="p-3 text-center space-y-1.5 flex-1 flex flex-col justify-between bg-white">
                       <div className="space-y-1">
-                        <h4 className="font-editorial text-sm sm:text-base font-medium text-[#1f1c19] group-hover:text-[#70b444] transition-colors truncate">
+                        <h4 className="font-editorial text-sm sm:text-base font-medium text-[#1f1c19] group-hover:text-[#2563eb] transition-colors truncate">
                           {item.title}
                         </h4>
                         
@@ -3188,7 +3335,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                             setIsCartOpen(false);
                             navigateTo('checkout');
                           }}
-                          className="w-full bg-[#70b444] hover:bg-[#5ea134] text-white py-2 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                          className="w-full bg-[#2563eb] hover:bg-[#5ea134] text-white py-2 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
                           title="Buy Now"
                         >
                           <Zap className="w-3 h-3 fill-current shrink-0" />
@@ -3213,12 +3360,12 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             {/* Page Header & Breadcrumbs */}
             <div className="text-center mb-8 sm:mb-12">
               <h1 className="font-editorial text-3xl sm:text-5xl font-normal text-[#1f3f16] tracking-tight">
-                Contact <span className="italic text-[#70b444]">Us</span>
+                Contact <span className="italic text-[#2563eb]">Us</span>
               </h1>
               <nav className="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium text-slate-500 mt-2.5">
                 <button 
                   onClick={() => navigateTo('home')}
-                  className="hover:text-[#70b444] transition cursor-pointer"
+                  className="hover:text-[#2563eb] transition cursor-pointer"
                 >
                   Home
                 </button>
@@ -3232,8 +3379,8 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               
               {/* Left Column: Let's Talk (Megh Bristi Luxury Forest Green) */}
               <div className="lg:w-[40%] bg-[#1f3f16] text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full bg-[#70b444]/15 pointer-events-none blur-3xl" />
-                <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-[#70b444]/10 pointer-events-none blur-2xl" />
+                <div className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full bg-[#2563eb]/15 pointer-events-none blur-3xl" />
+                <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-[#2563eb]/10 pointer-events-none blur-2xl" />
                 
                 <div className="relative z-10 space-y-7">
                   {/* Brand Logo & Title */}
@@ -3339,7 +3486,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               {/* Right Column: Send us a message form */}
               <div className="lg:flex-1 p-8 sm:p-10 lg:p-12 bg-white">
                 <h2 className="font-editorial text-2xl sm:text-3xl font-normal text-[#1f1c19] tracking-tight mb-6">
-                  Send us a <span className="italic text-[#70b444]">Message</span>
+                  Send us a <span className="italic text-[#2563eb]">Message</span>
                 </h2>
 
                 <form onSubmit={handleContactSubmit} className="space-y-5">
@@ -3355,7 +3502,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         value={contactFirstName} 
                         onChange={e => setContactFirstName(e.target.value)} 
                         placeholder="First Name"
-                        className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#70b444] focus:ring-1 focus:ring-[#70b444] transition"
+                        className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition"
                       />
                     </div>
                     <div>
@@ -3367,7 +3514,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         value={contactLastName} 
                         onChange={e => setContactLastName(e.target.value)} 
                         placeholder="Last Name"
-                        className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#70b444] focus:ring-1 focus:ring-[#70b444] transition"
+                        className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition"
                       />
                     </div>
                   </div>
@@ -3383,7 +3530,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       value={contactEmail} 
                       onChange={e => setContactEmail(e.target.value)} 
                       placeholder="your.email@example.com"
-                      className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#70b444] focus:ring-1 focus:ring-[#70b444] transition"
+                      className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition"
                     />
                   </div>
 
@@ -3396,7 +3543,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       <select
                         value={contactCountryCode}
                         onChange={e => setContactCountryCode(e.target.value)}
-                        className="px-3 py-3 bg-slate-50 border border-[#e8e4dc] rounded-xl text-xs sm:text-sm font-semibold text-slate-700 outline-none focus:border-[#70b444] cursor-pointer"
+                        className="px-3 py-3 bg-slate-50 border border-[#e8e4dc] rounded-xl text-xs sm:text-sm font-semibold text-slate-700 outline-none focus:border-[#2563eb] cursor-pointer"
                       >
                         <option value="+880">+880 (BD)</option>
                         <option value="+91">+91 (IN)</option>
@@ -3411,7 +3558,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         value={contactPhone} 
                         onChange={e => setContactPhone(e.target.value)} 
                         placeholder="01XXXXXXXXX"
-                        className="flex-1 px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#70b444] focus:ring-1 focus:ring-[#70b444] transition"
+                        className="flex-1 px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition"
                       />
                     </div>
                   </div>
@@ -3426,7 +3573,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       value={contactSubject} 
                       onChange={e => setContactSubject(e.target.value)} 
                       placeholder="How can we help you?"
-                      className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#70b444] focus:ring-1 focus:ring-[#70b444] transition"
+                      className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition"
                     />
                   </div>
 
@@ -3441,7 +3588,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       value={contactMessage} 
                       onChange={e => setContactMessage(e.target.value)} 
                       placeholder="Write your message or inquiry here..."
-                      className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#70b444] focus:ring-1 focus:ring-[#70b444] transition resize-none"
+                      className="w-full px-4 py-3 bg-[#faf8f5] border border-[#e8e4dc] rounded-xl text-xs sm:text-sm text-slate-900 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition resize-none"
                     />
                   </div>
 
@@ -3450,7 +3597,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     <button 
                       type="submit" 
                       disabled={isSubmittingContact}
-                      className="w-full sm:w-auto px-9 py-3.5 bg-[#70b444] hover:bg-[#5ea134] text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full sm:w-auto px-9 py-3.5 bg-[#2563eb] hover:bg-[#5ea134] text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                     >
                       {isSubmittingContact ? (
                         <>
@@ -3482,7 +3629,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               <nav className="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium text-slate-500 mb-2">
                 <button 
                   onClick={() => navigateTo('home')} 
-                  className="hover:text-[#70b444] transition-colors cursor-pointer"
+                  className="hover:text-[#2563eb] transition-colors cursor-pointer"
                 >
                   Home
                 </button>
@@ -3492,7 +3639,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     setActiveCollectionId('');
                     navigate('/collections');
                   }}
-                  className={`hover:text-[#70b444] transition-colors cursor-pointer ${!activeCollectionId ? 'text-[#1f3f16] font-bold' : ''}`}
+                  className={`hover:text-[#2563eb] transition-colors cursor-pointer ${!activeCollectionId ? 'text-[#1f3f16] font-bold' : ''}`}
                 >
                   Collections
                 </button>
@@ -3519,7 +3666,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     Special Collection
                   </span>
                 </h1>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-24 h-[3px] bg-[#16a34a] rounded-full" />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-24 h-[3px] bg-[#2563eb] rounded-full" />
               </div>
               <p className="text-xs sm:text-sm text-[#6b645b] max-w-xl mx-auto font-light leading-relaxed">
                 Explore our signature seasonal edits, hand-loomed luxury, and designer party wear crafted with timeless elegance.
@@ -3614,7 +3761,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-[#f0ece4] pb-5">
                           <div>
                             {col.badge && (
-                              <span className="text-[11px] font-mono tracking-[0.2em] text-[#70b444] uppercase font-bold block mb-1">
+                              <span className="text-[11px] font-mono tracking-[0.2em] text-[#2563eb] uppercase font-bold block mb-1">
                                 {col.badge}
                               </span>
                             )}
@@ -3666,7 +3813,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                       className="w-full h-full object-cover object-top skew-x-[6.5deg] scale-115 transition-transform duration-700 ease-out group-hover:scale-120"
                                     />
                                     {product.discountPercentage ? (
-                                      <span className="absolute top-2.5 right-4 z-10 bg-[#70b444] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider uppercase skew-x-[6.5deg] shadow-xs">
+                                      <span className="absolute top-2.5 right-4 z-10 bg-[#2563eb] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider uppercase skew-x-[6.5deg] shadow-xs">
                                         -{product.discountPercentage}%
                                       </span>
                                     ) : null}
@@ -3677,7 +3824,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                     <div>
                                       <h3 
                                         onClick={() => openProductDetail(product)}
-                                        className="font-sans text-xs sm:text-sm font-normal text-[#1f1c19] hover:text-[#70b444] transition-colors cursor-pointer line-clamp-2 leading-snug"
+                                        className="font-sans text-xs sm:text-sm font-normal text-[#1f1c19] hover:text-[#2563eb] transition-colors cursor-pointer line-clamp-2 leading-snug"
                                         title={product.title}
                                       >
                                         {product.title}
@@ -3717,7 +3864,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                           setIsCartOpen(false);
                                           navigateTo('checkout');
                                         }}
-                                        className="w-full bg-[#70b444] hover:bg-[#5ea134] text-white py-1.5 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                        className="w-full bg-[#2563eb] hover:bg-[#5ea134] text-white py-1.5 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
                                         title="Buy Now"
                                       >
                                         <Zap className="w-3 h-3 fill-current shrink-0" />
@@ -3748,7 +3895,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           {shopCategories.length > 0 && (
             <div className="bg-white p-4 rounded-2xl border border-[#e8e4dc] shadow-xs space-y-3">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-[#70b444] font-bold flex items-center gap-1.5">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#2563eb] font-bold flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   Select Category / Subcategory
                 </span>
@@ -3759,7 +3906,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       setSelectedSubcategory("All");
                       setCurrentPage(1);
                     }}
-                    className="text-xs text-[#70b444] hover:underline font-semibold cursor-pointer"
+                    className="text-xs text-[#2563eb] hover:underline font-semibold cursor-pointer"
                   >
                     Reset Filter (Show All)
                   </button>
@@ -3785,14 +3932,14 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       }}
                       className={"px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 cursor-pointer shrink-0 " + (
                         isSelected
-                          ? "bg-[#1f3f16] text-white shadow-sm ring-2 ring-[#70b444]"
-                          : "bg-[#faf8f5] hover:bg-white text-slate-700 border border-[#e8e4dc] hover:border-[#70b444] hover:text-[#70b444]"
+                          ? "bg-[#1f3f16] text-white shadow-sm ring-2 ring-[#2563eb]"
+                          : "bg-[#faf8f5] hover:bg-white text-slate-700 border border-[#e8e4dc] hover:border-[#2563eb] hover:text-[#2563eb]"
                       )}
                     >
                       <span>{cat}</span>
                       {count > 0 && (
                         <span className={"text-[10px] px-1.5 py-0.2 rounded-full font-bold " + (
-                          isSelected ? "bg-[#70b444] text-white" : "bg-stone-200/80 text-stone-700"
+                          isSelected ? "bg-[#2563eb] text-white" : "bg-stone-200/80 text-stone-700"
                         )}>
                           {count}
                         </span>
@@ -3806,7 +3953,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               {availableSubcategories.length > 0 && (
                 <div className="pt-2.5 border-t border-[#f0ece4] flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
                   <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold shrink-0 flex items-center gap-1.5 mr-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#70b444]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
                     Subcategory:
                   </span>
                   <button
@@ -3817,7 +3964,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     }}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                       selectedSubcategory === "All"
-                        ? "bg-[#70b444] text-white shadow-xs"
+                        ? "bg-[#2563eb] text-white shadow-xs"
                         : "bg-[#faf8f5] hover:bg-white text-slate-600 border border-[#e8e4dc]"
                     }`}
                   >
@@ -3846,14 +3993,14 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         }}
                         className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
                           isSubSelected
-                            ? "bg-[#1f3f16] text-white shadow-xs ring-2 ring-[#70b444]"
-                            : "bg-[#faf8f5] hover:bg-white text-slate-700 border border-[#e8e4dc] hover:border-[#70b444] hover:text-[#70b444]"
+                            ? "bg-[#1f3f16] text-white shadow-xs ring-2 ring-[#2563eb]"
+                            : "bg-[#faf8f5] hover:bg-white text-slate-700 border border-[#e8e4dc] hover:border-[#2563eb] hover:text-[#2563eb]"
                         }`}
                       >
                         <span>{sub.name}</span>
                         {subCount > 0 && (
                           <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                            isSubSelected ? "bg-[#70b444] text-white" : "bg-stone-200/80 text-stone-700"
+                            isSubSelected ? "bg-[#2563eb] text-white" : "bg-stone-200/80 text-stone-700"
                           }`}>
                             {subCount}
                           </span>
@@ -3882,7 +4029,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           setSelectedSubcategory('All');
                           setCurrentPage(1);
                         }}
-                        className="text-[11px] text-[#70b444] hover:underline cursor-pointer font-medium"
+                        className="text-[11px] text-[#2563eb] hover:underline cursor-pointer font-medium"
                       >
                         Reset
                       </button>
@@ -3929,7 +4076,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           }}
                           className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                             selectedSubcategory === 'All'
-                              ? 'bg-[#70b444] text-white shadow-xs'
+                              ? 'bg-[#2563eb] text-white shadow-xs'
                               : 'bg-[#faf8f5] hover:bg-[#f0ece4] text-[#4d4740] border border-[#e8e4dc]'
                           }`}
                         >
@@ -3984,7 +4131,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                             setSelectedBrand(brand);
                             setCurrentPage(1);
                           }}
-                          className="w-4 h-4 text-[#1f1c19] focus:ring-[#70b444] border-[#ded8cf] cursor-pointer"
+                          className="w-4 h-4 text-[#1f1c19] focus:ring-[#2563eb] border-[#ded8cf] cursor-pointer"
                         />
                         <span className="truncate">{brand}</span>
                       </label>
@@ -4052,7 +4199,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       <div 
                         key={product.id}
                         onClick={() => openProductDetail(product)}
-                        className="group relative flex flex-col bg-white border border-[#e8e4dc] hover:border-[#70b444]/40 hover:shadow-xl transition-all duration-300 rounded-sm overflow-hidden select-none justify-between cursor-pointer"
+                        className="group relative flex flex-col bg-white border border-[#e8e4dc] hover:border-[#2563eb]/40 hover:shadow-xl transition-all duration-300 rounded-sm overflow-hidden select-none justify-between cursor-pointer"
                       >
                         <div className="relative aspect-[3/4] w-full bg-[#f8f7f5] overflow-hidden">
                           <ResponsiveImage width={286} height={380} src={product.coverImage} alt={product.title} 
@@ -4061,7 +4208,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           />
 
                           {isDiscounted && discountPct > 0 && (
-                            <div className="absolute top-2.5 left-2.5 z-10 bg-[#70b444] text-white text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-xs shadow-sm tracking-wider">
+                            <div className="absolute top-2.5 left-2.5 z-10 bg-[#2563eb] text-white text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-xs shadow-sm tracking-wider">
                               -{discountPct}%
                             </div>
                           )}
@@ -4069,7 +4216,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                         <div className="p-3 text-center flex-1 flex flex-col justify-between bg-white">
                           <div className="space-y-1">
-                            <h4 className="font-editorial text-sm sm:text-base font-medium text-[#1f1c19] group-hover:text-[#70b444] transition-colors truncate">
+                            <h4 className="font-editorial text-sm sm:text-base font-medium text-[#1f1c19] group-hover:text-[#2563eb] transition-colors truncate">
                               {product.title}
                             </h4>
 
@@ -4120,7 +4267,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                 setIsCartOpen(false);
                                 navigateTo('checkout');
                               }}
-                              className="w-full bg-[#70b444] hover:bg-[#5ea134] text-white py-2 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                              className="w-full bg-[#2563eb] hover:bg-[#5ea134] text-white py-2 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
                               title="Buy Now"
                             >
                               <Zap className="w-3 h-3 fill-current shrink-0" />
@@ -4229,6 +4376,25 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       )}
 
       {/* ============================================================
+          VIEW 4.5: CUSTOMER ORDERS HISTORY (Matching Arogga - Screenshot 4)
+          ============================================================ */}
+      {activeNav === 'orders' && (
+        <React.Suspense fallback={
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="w-10 h-10 border-4 border-teal-700 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <CustomerOrdersView
+            onBackToHome={() => navigateTo('home')}
+            onOrderAgain={(prod) => {
+              handleAddToCart(prod, 1);
+              setIsCartOpen(true);
+            }}
+          />
+        </React.Suspense>
+      )}
+
+      {/* ============================================================
           VIEW 5: DEDICATED CHECKOUT PAGE (Exact UX from User Design)
           ============================================================ */}
       {activeNav === 'checkout' && (
@@ -4310,9 +4476,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           href="https://facebook.com/MeghBristiFashion"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16a34a] hover:bg-[#15803d] text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95"
+                          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95"
                         >
-                          <span className="w-4 h-4 rounded-full bg-white text-[#16a34a] font-black flex items-center justify-center text-[10px]">f</span>
+                          <span className="w-4 h-4 rounded-full bg-white text-[#2563eb] font-black flex items-center justify-center text-[10px]">f</span>
                           <span>@MeghBristiFashion</span>
                         </a>
                       </div>
@@ -4347,11 +4513,11 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                     {/* Right Column: FOR ONLINE ORDER, Shop Now, Badge, Phone */}
                     <div className="md:col-span-3 flex flex-col items-center md:items-end text-center md:text-right space-y-4">
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-dashed border-[#16a34a] p-1 flex items-center justify-center bg-white/70 shadow-sm">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-dashed border-[#2563eb] p-1 flex items-center justify-center bg-white/70 shadow-sm">
                         <div className="text-center leading-tight">
-                          <ShoppingBag className="w-5 h-5 mx-auto text-[#16a34a] mb-0.5" />
+                          <ShoppingBag className="w-5 h-5 mx-auto text-[#2563eb] mb-0.5" />
                           <span className="text-[9px] font-black text-slate-800 uppercase block tracking-tighter">SHOPPING ZONE</span>
-                          <span className="text-[7px] text-[#16a34a] font-medium block">BEST QUALITY</span>
+                          <span className="text-[7px] text-[#2563eb] font-medium block">BEST QUALITY</span>
                         </div>
                       </div>
 
@@ -4362,7 +4528,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                         <button
                           type="button"
                           onClick={() => navigateTo('shop')}
-                          className="px-7 py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-sm sm:text-base rounded-md shadow-lg transition-transform active:scale-95 cursor-pointer"
+                          className="px-7 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-sm sm:text-base rounded-md shadow-lg transition-transform active:scale-95 cursor-pointer"
                         >
                           Shop Now
                         </button>
@@ -4370,7 +4536,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                       <a
                         href="tel:01406667669"
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16a34a] hover:bg-[#15803d] text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95"
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95"
                       >
                         <Phone className="w-3.5 h-3.5 text-white" />
                         <span className="font-mono">01406667669</span>
@@ -4397,7 +4563,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       </p>
                       <div className="flex items-center gap-2 pt-1 flex-wrap justify-center">
                         <span className="px-3 py-1 bg-black/60 backdrop-blur-md text-white rounded-md text-xs font-mono font-bold flex items-center gap-1.5 border border-white/20">
-                          <Phone className="w-3 h-3 text-[#16a34a]" />
+                          <Phone className="w-3 h-3 text-[#2563eb]" />
                           {headerPhone || '01910-646547'}
                         </span>
                         <button
@@ -4406,7 +4572,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                             setSelectedCategoryCheckbox('Womens');
                             navigateTo('shop');
                           }}
-                          className="px-5 py-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-md text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-md"
+                          className="px-5 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-md text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-md"
                         >
                           SHOP NOW
                         </button>
@@ -4659,7 +4825,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       onClick={() => setActiveSlideIndex(dotIdx)}
                       className={`transition-all rounded-full cursor-pointer flex items-center justify-center ${
                         dotIdx === activeSlideIndex
-                          ? 'w-8 h-2.5 bg-[#16a34a] shadow-md'
+                          ? 'w-8 h-2.5 bg-[#2563eb] shadow-md'
                           : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/80'
                       }`}
                       aria-label={`Slide ${dotIdx + 1} (${b.mediaType === 'video' ? 'Video' : 'Image'})`}
@@ -4706,14 +4872,14 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       Popular Categories
                     </span>
                   </h2>
-                  <div className="absolute -bottom-[11px] left-0 w-16 sm:w-20 h-[3px] bg-[#16a34a] rounded-full" />
+                  <div className="absolute -bottom-[11px] left-0 w-16 sm:w-20 h-[3px] bg-[#2563eb] rounded-full" />
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => scrollCategories('left')}
-                    className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#16a34a] hover:bg-[#16a34a] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
+                    className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#2563eb] hover:bg-[#2563eb] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
                     aria-label="Previous categories"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -4721,7 +4887,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <button
                     type="button"
                     onClick={() => scrollCategories('right')}
-                    className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#16a34a] hover:bg-[#16a34a] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
+                    className="hidden sm:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-300 hover:border-[#2563eb] hover:bg-[#2563eb] hover:text-white text-slate-700 items-center justify-center transition shadow-2xs cursor-pointer active:scale-95"
                     aria-label="Next categories"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -4729,7 +4895,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <button
                     type="button"
                     onClick={() => navigateTo('shop')}
-                    className="inline-flex items-center gap-1 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-[#16a34a] text-[#16a34a] hover:bg-[#16a34a] hover:text-white text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer group shrink-0"
+                    className="inline-flex items-center gap-1 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-[#2563eb] text-[#2563eb] hover:bg-[#2563eb] hover:text-white text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer group shrink-0"
                   >
                     <span>View All</span>
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -4755,7 +4921,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       }}
                       className="group flex flex-col items-center shrink-0 cursor-pointer select-none"
                     >
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-slate-200/90 bg-stone-50 shadow-xs flex items-center justify-center overflow-hidden hover:border-[#16a34a] hover:shadow-md transition-all group-hover:scale-105 p-1">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-slate-200/90 bg-stone-50 shadow-xs flex items-center justify-center overflow-hidden hover:border-[#2563eb] hover:shadow-md transition-all group-hover:scale-105 p-1">
                         {cat.image ? (
                           <img
                             src={cat.image}
@@ -4764,10 +4930,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                             loading="lazy"
                           />
                         ) : (
-                          <Sparkles className="w-7 h-7 text-[#16a34a]" />
+                          <Sparkles className="w-7 h-7 text-[#2563eb]" />
                         )}
                       </div>
-                      <span className="text-xs sm:text-[13px] font-semibold text-slate-800 group-hover:text-[#16a34a] transition-colors text-center mt-2.5 max-w-[110px] truncate">
+                      <span className="text-xs sm:text-[13px] font-semibold text-slate-800 group-hover:text-[#2563eb] transition-colors text-center mt-2.5 max-w-[110px] truncate">
                         {cat.name}
                       </span>
                       <span className="text-[10px] text-stone-500 font-medium">
@@ -4842,332 +5008,173 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
 
 
-              {/* BEST SELLERS SECTION (ALGORITHM-BASED WITH THREE TABS: THIS WEEK / THIS MONTH / ALL TIME) */}
-              {/* If no products have sales (total sales is 0), this whole section is completely hidden */}
-              {bestSellers.totalSales > 0 && (bestSellers.week.length > 0 || bestSellers.month.length > 0 || bestSellers.all.length > 0) ? (
-                <ScrollReveal>
-                  <section className="pt-10 pb-12 sm:pt-14 sm:pb-16 bg-[#faf8f5] border-b border-[#e8e4dc]">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-8">
-                      <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
-                        <div className="relative inline-block mx-auto mb-2">
-                          <h2 className="font-sans text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight uppercase flex items-center justify-center gap-2">
-                            <span>BEST SELLERS</span>
-                            <span className="text-xs sm:text-sm font-bold bg-[#ffc107] text-slate-950 px-2.5 py-0.5 rounded-md shadow-2xs">
-                              Popular Styles
-                            </span>
-                          </h2>
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-[3px] bg-[#16a34a] rounded-full" />
+              {/* BEST SELLERS SECTION (REMOVED) */}
+
+
+          {/* ============================================================
+              6. MULTI-PRODUCT FLASH SALE CAMPAIGN SECTION
+              ============================================================ */}
+          {(products.length > 0 && flashSaleConfig?.enabled && flashSaleTimeLeft.isLive && (
+            (flashSaleConfig.items && flashSaleConfig.items.length > 0) || flashSaleConfig.productId
+          )) && (() => {
+            const campaignItems = flashSaleConfig.items && flashSaleConfig.items.length > 0 
+              ? flashSaleConfig.items 
+              : [{
+                  productId: flashSaleConfig.productId || '',
+                  flashPrice: flashSaleConfig.flashPrice || 0,
+                  originalPrice: flashSaleConfig.originalPrice || 0
+                }];
+
+            const validCampaignProducts = campaignItems
+              .map(item => {
+                const prod = products.find(p => p.id === item.productId);
+                if (!prod) return null;
+                const flashPrice = item.flashPrice > 0 ? item.flashPrice : prod.price;
+                const origPrice = item.originalPrice && item.originalPrice > flashPrice 
+                  ? item.originalPrice 
+                  : (prod.regularPrice || prod.price);
+                const discount = origPrice > flashPrice ? Math.round(((origPrice - flashPrice) / origPrice) * 100) : 0;
+                return {
+                  product: prod,
+                  flashPrice,
+                  origPrice,
+                  discount
+                };
+              })
+              .filter(Boolean) as { product: Product; flashPrice: number; origPrice: number; discount: number }[];
+
+            if (validCampaignProducts.length === 0) return null;
+
+            const campaignTitle = flashSaleConfig.campaignTitle || '11.11 MEGA FLASH SALE';
+            const badgeTag = flashSaleConfig.badgeTag || 'LIMITED TIME FLASH SALE';
+            const campaignSubtitle = flashSaleConfig.subtitle || 'Special discounted prices available during this campaign period only.';
+
+            return (
+              <ScrollReveal>
+                <section className="relative overflow-hidden bg-gradient-to-b from-[#faf8f5] via-[#f5ede3] to-[#faf8f5] py-14 sm:py-18 border-b border-[#e8e4dc]">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
+                    
+                    {/* Campaign Header & Live Countdown */}
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-[#ded8cf]/70">
+                      <div className="space-y-2 text-center md:text-left">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 border border-orange-300 text-orange-700 text-[11px] font-mono tracking-widest uppercase">
+                          <Flame className="w-3.5 h-3.5 text-orange-600 animate-pulse" />
+                          <span>{badgeTag}</span>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-600 font-medium mt-3">
-                          {ecomSettings?.bestSellersSectionSubtitle || ecomSettings?.bundlesSectionSubtitle || 'Customer Favorites & Top-Ranked Styles'}
+                        <h2 className="font-editorial text-2xl sm:text-4xl text-[#1f1c19] tracking-tight font-black">
+                          {campaignTitle}
+                        </h2>
+                        <p className="text-xs sm:text-sm text-[#6b645b]">
+                          {campaignSubtitle}
                         </p>
                       </div>
 
-                    {/* 3 Tabs: This Week / This Month / All Time */}
-                    <div className="flex items-center justify-center mb-8 sm:mb-10">
-                      <div className="inline-flex p-1 bg-[#ede8e1] rounded-full border border-[#ded8cf]">
-                        {(['week', 'month', 'all'] as const).map((period) => {
-                          const label = period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : 'All Time';
-                          const count = bestSellers[period]?.length || 0;
-                          const isActive = bestSellerPeriod === period;
+                      {/* Live Animated Countdown Timer */}
+                      <div className="flex items-center justify-center md:justify-end gap-2.5 sm:gap-3 select-none">
+                        <div className="bg-slate-900 text-white rounded-xl px-3 py-2 text-center min-w-[58px] shadow-sm">
+                          <span className="font-mono text-xl sm:text-2xl font-black block leading-none">{String(flashSaleTimeLeft.days).padStart(2, '0')}</span>
+                          <span className="text-[9px] uppercase font-mono text-slate-400 tracking-wider">Days</span>
+                        </div>
+                        <span className="font-mono text-lg font-bold text-slate-400">:</span>
+                        <div className="bg-slate-900 text-white rounded-xl px-3 py-2 text-center min-w-[58px] shadow-sm">
+                          <span className="font-mono text-xl sm:text-2xl font-black block leading-none">{String(flashSaleTimeLeft.hours).padStart(2, '0')}</span>
+                          <span className="text-[9px] uppercase font-mono text-slate-400 tracking-wider">Hours</span>
+                        </div>
+                        <span className="font-mono text-lg font-bold text-slate-400">:</span>
+                        <div className="bg-slate-900 text-white rounded-xl px-3 py-2 text-center min-w-[58px] shadow-sm">
+                          <span className="font-mono text-xl sm:text-2xl font-black block leading-none">{String(flashSaleTimeLeft.minutes).padStart(2, '0')}</span>
+                          <span className="text-[9px] uppercase font-mono text-slate-400 tracking-wider">Mins</span>
+                        </div>
+                        <span className="font-mono text-lg font-bold text-slate-400">:</span>
+                        <div className="bg-orange-600 text-white rounded-xl px-3 py-2 text-center min-w-[58px] shadow-sm animate-pulse">
+                          <span className="font-mono text-xl sm:text-2xl font-black block leading-none">{String(flashSaleTimeLeft.seconds).padStart(2, '0')}</span>
+                          <span className="text-[9px] uppercase font-mono text-orange-200 tracking-wider">Secs</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Campaign Products Horizontal Scroll Container (Single Row, No 2nd Row) */}
+                    <div className="relative group/carousel">
+                      <div className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin] [scrollbar-color:#f97316_#f1f5f9]">
+                        {validCampaignProducts.map(({ product, flashPrice, origPrice, discount }) => {
+                          const img = product.coverImage || product.image || (product.images && product.images[0]) || DEFAULT_STORE_FALLBACK_IMAGE;
+
                           return (
-                            <button
-                              key={period}
-                              type="button"
-                              onClick={() => setBestSellerPeriod(period)}
-                              className={`px-4 sm:px-5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                                isActive
-                                  ? 'bg-[#1f1c19] text-white shadow-xs'
-                                  : 'text-[#6b645b] hover:text-[#1f1c19] hover:bg-white/60'
-                              }`}
+                            <div 
+                              key={`flash-${product.id}`}
+                              className="group bg-white rounded-2xl border border-slate-200/90 hover:border-orange-400 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between shrink-0 w-[240px] sm:w-[260px] md:w-[280px] snap-start"
                             >
-                              <span>{label}</span>
-                              {count > 0 && (
-                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                  isActive ? 'bg-[#70b444] text-white' : 'bg-[#ded8cf] text-[#4d4740]'
-                                }`}>
-                                  {count}
+                              <div 
+                                className="relative aspect-[3/4] w-full bg-slate-50 overflow-hidden cursor-pointer"
+                                onClick={() => openProductDetail(product)}
+                              >
+                                <img 
+                                  src={optimizeImageUrl(img, 400)}
+                                  alt={product.title}
+                                  loading="lazy"
+                                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                                />
+                                {discount > 0 && (
+                                  <span className="absolute top-2.5 left-2.5 bg-orange-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs tracking-wider">
+                                    -{discount}% OFF
+                                  </span>
+                                )}
+                                <span className="absolute bottom-2.5 right-2.5 bg-slate-950/80 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded-md">
+                                  Flash Price
                                 </span>
-                              )}
-                            </button>
+                              </div>
+
+                              <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+                                <div>
+                                  <h3 
+                                    onClick={() => openProductDetail(product)}
+                                    className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-orange-600 transition-colors cursor-pointer line-clamp-1"
+                                  >
+                                    {product.title}
+                                  </h3>
+                                  <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-sm sm:text-base font-black text-orange-600">
+                                      {formatPrice(flashPrice)}
+                                    </span>
+                                    {origPrice > flashPrice && (
+                                      <span className="text-xs text-slate-400 line-through">
+                                        {formatPrice(origPrice)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="pt-2 grid grid-cols-2 gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddToCart(product)}
+                                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+                                  >
+                                    <ShoppingBag className="w-3.5 h-3.5" />
+                                    <span>Add</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleAddToCart(product);
+                                      setIsCartOpen(false);
+                                      navigateTo('checkout');
+                                    }}
+                                    className="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+                                  >
+                                    <Zap className="w-3.5 h-3.5 fill-current" />
+                                    <span>Buy</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
                     </div>
 
-                    {/* Products Grid for Active Tab */}
-                    {bestSellers[bestSellerPeriod]?.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
-                        {bestSellers[bestSellerPeriod].map((product, rankIdx) => (
-                          <div 
-                            key={`bestseller-${bestSellerPeriod}-${product.id}`}
-                            className="group relative flex flex-col bg-white border border-[#e8e4dc] hover:border-[#70b444]/40 hover:shadow-xl transition-all duration-300 rounded-sm overflow-hidden"
-                          >
-                            {/* Best Seller Rank Badge */}
-                            <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
-                              <span className="inline-flex items-center gap-1 bg-[#1f1c19] text-[#faf8f5] text-[10px] font-semibold px-2 py-0.5 rounded-xs tracking-wider uppercase">
-                                <Sparkles className="w-2.5 h-2.5 text-[#70b444]" />
-                                #{rankIdx + 1}
-                              </span>
-                            </div>
-
-                            <div 
-                              className="relative aspect-[3/4] w-full bg-[#f6f5f2] overflow-hidden cursor-pointer" 
-                              onClick={() => openProductDetail(product)}
-                            >
-                              <img 
-                                loading="lazy" 
-                                decoding="async"
-                                width={286} 
-                                height={380} 
-                                src={optimizeImageUrl(product.coverImage, 400)} 
-                                srcSet={`${optimizeImageUrl(product.coverImage, 360)} 360w, ${optimizeImageUrl(product.coverImage, 600)} 600w`}
-                                sizes="(max-width: 640px) 50vw, 286px"
-                                alt={product.title}
-                                onError={(e) => {
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.src = DEFAULT_PRODUCT_FALLBACK_IMAGE;
-                                }}
-                                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                              />
-                              {product.discountPercentage ? (
-                                <span className="absolute top-2.5 right-2.5 bg-[#70b444] text-white text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider">
-                                  -{product.discountPercentage}%
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <div className="p-3 text-center space-y-1.5 flex-1 flex flex-col justify-between">
-                              <h3 
-                                onClick={() => openProductDetail(product)}
-                                className="font-editorial text-sm sm:text-base text-[#1f1c19] hover:text-[#70b444] transition-colors cursor-pointer line-clamp-1"
-                                title={product.title}
-                              >
-                                {product.title}
-                              </h3>
-                              
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-[#1f1c19] font-bold text-sm sm:text-base">
-                                  {formatPrice(product.price)}
-                                </span>
-                                {product.regularPrice && product.regularPrice > product.price && (
-                                  <span className="text-[#8c827a] line-through text-xs sm:text-sm">
-                                    {formatPrice(product.regularPrice)}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
-                                <button 
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddToCart(product);
-                                  }}
-                                  className="w-full bg-[#f4ede3] hover:bg-[#e8e0d5] text-[#1f1c19] py-2 px-1 rounded text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
-                                  title="Add to Cart"
-                                >
-                                  <ShoppingBag className="w-3 h-3 shrink-0" />
-                                  <span className="truncate">Add</span>
-                                </button>
-                                <button 
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddToCart(product);
-                                    setIsCartOpen(false);
-                                    navigateTo('checkout');
-                                  }}
-                                  className="w-full bg-[#70b444] hover:bg-[#5ea134] text-white py-2 px-1 rounded text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
-                                  title="Buy Now"
-                                >
-                                  <Zap className="w-3 h-3 fill-current shrink-0" />
-                                  <span className="truncate">Buy</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 bg-white/70 border border-dashed border-[#ded8cf] max-w-md mx-auto p-6 rounded-sm">
-                        <Sparkles className="w-8 h-8 text-[#70b444] mx-auto mb-3" />
-                        <h4 className="text-base font-editorial text-[#1f1c19] mb-1">
-                          No sales recorded {bestSellerPeriod === 'week' ? 'this week' : 'this month'} yet
-                        </h4>
-                        <p className="text-xs text-[#6b645b] mb-4">
-                          Explore our all-time top performing customer favorites!
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setBestSellerPeriod('all')}
-                          className="px-5 py-2.5 bg-[#1f1c19] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#70b444] transition-colors rounded-sm cursor-pointer"
-                        >
-                          View All-Time Best Sellers
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </section>
-              </ScrollReveal>
-            ) : null}
-
-
-          {/* ============================================================
-              6. CLEAN LUXURY FLASH SALE SPOTLIGHT & CLINICAL VIDEO
-              ============================================================ */}
-          {(products.length > 0 && (!flashSaleConfig || flashSaleConfig.enabled !== false)) && (() => {
-            const targetProd = flashSaleConfig?.productId 
-              ? products.find(p => p.id === flashSaleConfig.productId) 
-              : products[0];
-            
-            if (!targetProd) return null;
-
-            const title = targetProd.title;
-            const rawDesc = targetProd.description || targetProd.benefitsHighlights || '';
-            const subtitle = rawDesc
-              .split('\n')[0]
-              .replace(/^Product Description\s*[:：]?\s*/i, '')
-              .replace(/^পণ্যের বিবরণ\s*[:：]?\s*/i, '')
-              .trim() || rawDesc.slice(0, 160);
-
-            const badgeTag = targetProd.series 
-              ? `${targetProd.series.toUpperCase()} • FLASH SALE` 
-              : (targetProd.category ? `${targetProd.category.toUpperCase()} • FLASH SALE` : 'LIMITED FLASH SALE • SPECIAL OFFER');
-
-            const image = targetProd.coverImage || (targetProd.images && targetProd.images[0]) || DEFAULT_PRODUCT_FALLBACK_IMAGE;
-            const flashPrice = (flashSaleConfig?.flashPrice && flashSaleConfig.flashPrice > 0) 
-              ? flashSaleConfig.flashPrice 
-              : targetProd.price;
-            const origPrice = (flashSaleConfig?.originalPrice && flashSaleConfig.originalPrice > 0)
-              ? flashSaleConfig.originalPrice 
-              : (targetProd.regularPrice || targetProd.price);
-            const discount = origPrice > flashPrice && origPrice > 0 ? Math.round(((origPrice - flashPrice) / origPrice) * 100) : 0;
-            const buttonText = 'SHOP FLASH DEAL';
-
-            return (
-              <ScrollReveal>
-                <div className="relative">
-                  {/* Clean Editorial Claude Pro Flash Sale Section */}
-                  <section className="relative overflow-hidden bg-gradient-to-b from-[#faf8f5] via-[#f5ede3] to-[#faf8f5] py-16 sm:py-20 border-b border-[#e8e4dc]">
-                    {/* Subtle Background Radial Aura */}
-                    <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-[#70b444]/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                    <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-                        
-                        {/* Left Column: Minimalist Typography & Animated Open Countdown */}
-                        <div className="lg:col-span-6 space-y-5 text-center lg:text-left">
-                          
-                          {/* Animated Header Badge */}
-                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#70b444]/10 border border-[#70b444]/25 text-[#70b444] text-[11px] font-mono tracking-widest uppercase">
-                            <Flame className="w-3.5 h-3.5 text-[#70b444] animate-pulse" />
-                            <span>{badgeTag}</span>
-                            {discount > 0 && (
-                              <span className="bg-[#70b444] text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
-                                {discount}% OFF
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Punchy Title */}
-                          <h2 className="font-editorial text-3xl sm:text-5xl lg:text-[48px] text-[#1f1c19] leading-[1.15] tracking-tight">
-                            {title}
-                          </h2>
-                          
-                          {/* Clean Short Subtitle */}
-                          <p className="text-[#6b645b] text-sm sm:text-base leading-relaxed max-w-lg mx-auto lg:mx-0 font-normal line-clamp-2">
-                            {subtitle}
-                          </p>
-
-                          {/* Open Typography Countdown (No Box Container) */}
-                          <div className="pt-2">
-                            <div className="flex items-baseline justify-center lg:justify-start gap-3 sm:gap-5 text-[#1f1c19] select-none">
-                              <div className="text-center lg:text-left">
-                                <span className="font-mono text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight">{String(flashSaleTimeLeft.days).padStart(2, '0')}</span>
-                                <span className="text-[10px] uppercase font-mono text-[#8c827a] block tracking-widest mt-0.5">DAYS</span>
-                              </div>
-                              <span className="font-mono text-2xl sm:text-3xl font-light text-[#ded8cf] -translate-y-2 sm:-translate-y-3">:</span>
-                              <div className="text-center lg:text-left">
-                                <span className="font-mono text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight">{String(flashSaleTimeLeft.hours).padStart(2, '0')}</span>
-                                <span className="text-[10px] uppercase font-mono text-[#8c827a] block tracking-widest mt-0.5">HOURS</span>
-                              </div>
-                              <span className="font-mono text-2xl sm:text-3xl font-light text-[#ded8cf] -translate-y-2 sm:-translate-y-3">:</span>
-                              <div className="text-center lg:text-left">
-                                <span className="font-mono text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight">{String(flashSaleTimeLeft.minutes).padStart(2, '0')}</span>
-                                <span className="text-[10px] uppercase font-mono text-[#8c827a] block tracking-widest mt-0.5">MINS</span>
-                              </div>
-                              <span className="font-mono text-2xl sm:text-3xl font-light text-[#ded8cf] -translate-y-2 sm:-translate-y-3">:</span>
-                              <div className="text-center lg:text-left">
-                                <span className="font-mono text-3xl sm:text-4xl lg:text-5xl font-medium text-[#70b444] tracking-tight animate-pulse">{String(flashSaleTimeLeft.seconds).padStart(2, '0')}</span>
-                                <span className="text-[10px] uppercase font-mono text-[#70b444] block tracking-widest mt-0.5">SECS</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Price & CTA Action */}
-                          <div className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-5 sm:gap-6">
-                            <div className="flex items-baseline gap-2.5">
-                              <span className="text-3xl sm:text-4xl font-bold text-[#1f1c19]">
-                                {formatPrice(flashPrice)}
-                              </span>
-                              {origPrice > flashPrice && (
-                                <span className="text-lg sm:text-xl text-[#8c827a] line-through">
-                                  {formatPrice(origPrice)}
-                                </span>
-                              )}
-                            </div>
-
-                            <button 
-                              onClick={() => {
-                                if (targetProd) {
-                                  openProductDetail(targetProd);
-                                } else {
-                                  navigateTo('shop');
-                                }
-                              }}
-                              className="bg-[#70b444] hover:bg-[#5ea134] text-white font-medium text-xs tracking-widest uppercase px-8 py-3.5 rounded-sm shadow-md hover:shadow-lg transition-all duration-300 inline-flex items-center gap-2.5 cursor-pointer group"
-                            >
-                              <span>{buttonText || 'SHOP FLASH DEAL'}</span>
-                              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </button>
-                          </div>
-
-                        </div>
-
-                        {/* Right Column: Seamless Product Image */}
-                        <div className="lg:col-span-6 relative flex items-center justify-center lg:justify-end">
-                          <div 
-                            onClick={() => {
-                              if (targetProd) openProductDetail(targetProd);
-                            }}
-                            className="relative w-full max-w-[340px] sm:max-w-[380px] lg:max-w-[420px] cursor-pointer group flex items-center justify-center py-4"
-                          >
-                            {/* Ambient Backlight Glow */}
-                            <div className="absolute inset-0 bg-[#70b444]/15 rounded-full blur-3xl opacity-60 group-hover:opacity-90 transition-opacity duration-700 pointer-events-none scale-105"></div>
-
-                            {/* Fashion Portrait Image */}
-                            <div className="relative z-10 w-full aspect-[3/4] rounded-sm overflow-hidden shadow-2xl border border-[#e8e4dc]">
-                              <img 
-                                loading="lazy" 
-                                width={380} 
-                                height={500} 
-                                src={image} 
-                                alt={title} 
-                                onError={(e) => {
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.src = DEFAULT_STORE_FALLBACK_IMAGE;
-                                }}
-                                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 select-none"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  </section>
-                </div>
               </ScrollReveal>
             );
           })()}
@@ -5222,13 +5229,13 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                               tabIndex={0}
                             >
                               {col.badge && (
-                                <span className="text-[11px] font-mono tracking-[0.25em] text-[#70b444] uppercase font-semibold block mb-1.5">
+                                <span className="text-[11px] font-mono tracking-[0.25em] text-[#2563eb] uppercase font-semibold block mb-1.5">
                                   {col.badge}
                                 </span>
                               )}
-                              <h2 className="font-editorial text-3xl sm:text-4xl lg:text-5xl font-normal text-[#141210] group-hover/coltitle:text-[#70b444] transition-colors tracking-wider uppercase flex items-center gap-3">
+                              <h2 className="font-editorial text-3xl sm:text-4xl lg:text-5xl font-normal text-[#141210] group-hover/coltitle:text-[#2563eb] transition-colors tracking-wider uppercase flex items-center gap-3">
                                 <span>{col.title}</span>
-                                <span className="text-xl sm:text-2xl text-slate-400 group-hover/coltitle:text-[#70b444] group-hover/coltitle:translate-x-1.5 transition-all">→</span>
+                                <span className="text-xl sm:text-2xl text-slate-400 group-hover/coltitle:text-[#2563eb] group-hover/coltitle:translate-x-1.5 transition-all">→</span>
                               </h2>
                               {col.subtitle && (
                                 <p className="text-xs sm:text-sm text-[#6b645b] leading-relaxed max-w-xl mt-2 font-light">
@@ -5245,7 +5252,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                   const el = document.getElementById(`col-scroll-${col.id}`);
                                   if (el) el.scrollBy({ left: -320, behavior: 'smooth' });
                                 }}
-                                className="w-10 h-10 rounded-full border border-[#e8e4dc] bg-white text-slate-700 hover:text-[#70b444] hover:border-[#70b444] flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
+                                className="w-10 h-10 rounded-full border border-[#e8e4dc] bg-white text-slate-700 hover:text-[#2563eb] hover:border-[#2563eb] flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
                                 aria-label="Scroll left"
                               >
                                 <ChevronLeft className="w-5 h-5" />
@@ -5256,7 +5263,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                   const el = document.getElementById(`col-scroll-${col.id}`);
                                   if (el) el.scrollBy({ left: 320, behavior: 'smooth' });
                                 }}
-                                className="w-10 h-10 rounded-full border border-[#e8e4dc] bg-white text-slate-700 hover:text-[#70b444] hover:border-[#70b444] flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
+                                className="w-10 h-10 rounded-full border border-[#e8e4dc] bg-white text-slate-700 hover:text-[#2563eb] hover:border-[#2563eb] flex items-center justify-center transition-all cursor-pointer shadow-xs active:scale-90"
                                 aria-label="Scroll right"
                               >
                                 <ChevronRight className="w-5 h-5" />
@@ -5298,7 +5305,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                         className="w-full h-full object-cover object-top skew-x-[6.5deg] scale-115 transition-transform duration-700 ease-out group-hover:scale-120"
                                       />
                                       {product.discountPercentage ? (
-                                        <span className="absolute top-2.5 right-4 z-10 bg-[#70b444] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider uppercase skew-x-[6.5deg] shadow-xs">
+                                        <span className="absolute top-2.5 right-4 z-10 bg-[#2563eb] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider uppercase skew-x-[6.5deg] shadow-xs">
                                           -{product.discountPercentage}%
                                         </span>
                                       ) : null}
@@ -5309,7 +5316,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                       <div>
                                         <h3 
                                           onClick={() => openProductDetail(product)}
-                                          className="font-sans text-xs sm:text-sm font-normal text-[#1f1c19] hover:text-[#70b444] transition-colors cursor-pointer line-clamp-2 leading-snug"
+                                          className="font-sans text-xs sm:text-sm font-normal text-[#1f1c19] hover:text-[#2563eb] transition-colors cursor-pointer line-clamp-2 leading-snug"
                                           title={product.title}
                                         >
                                           {product.title}
@@ -5349,7 +5356,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                             setIsCartOpen(false);
                                             navigateTo('checkout');
                                           }}
-                                          className="w-full bg-[#70b444] hover:bg-[#5ea134] text-white py-1.5 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                                          className="w-full bg-[#2563eb] hover:bg-[#5ea134] text-white py-1.5 px-1 rounded-xs text-[10px] sm:text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
                                           title="Buy Now"
                                         >
                                           <Zap className="w-3 h-3 fill-current shrink-0" />
@@ -5373,7 +5380,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                 setActiveNav('collections');
                                 scrollToTop();
                               }}
-                              className="px-10 py-3.5 bg-[#141210] hover:bg-[#70b444] text-white text-xs font-semibold uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 cursor-pointer shadow-sm rounded-xs flex items-center gap-2 group"
+                              className="px-10 py-3.5 bg-[#141210] hover:bg-[#2563eb] text-white text-xs font-semibold uppercase tracking-[0.2em] transition-all duration-300 active:scale-95 cursor-pointer shadow-sm rounded-xs flex items-center gap-2 group"
                             >
                               <span>See all</span>
                               <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -5623,6 +5630,50 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       </div>
                     ))}
 
+                    {/* DYNAMIC DEFAULT SAVED SHIPPING ADDRESS IN CART (Matching Screenshot) */}
+                    <div className="my-3 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5 text-left">
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                            Delivery to
+                          </h4>
+                          <span className="text-xs font-semibold text-slate-500 block">
+                            {selectedCustomerAddress?.addressType ? `${selectedCustomerAddress.addressType}` : 'Home'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddressModalOpen(true)}
+                          className="px-3.5 py-1.5 border border-slate-300 hover:border-teal-700 hover:bg-teal-50 text-teal-800 font-bold text-xs rounded-xl transition cursor-pointer"
+                        >
+                          Change
+                        </button>
+                      </div>
+
+                      {selectedCustomerAddress ? (
+                        <div className="space-y-0.5 pt-1 text-left border-t border-slate-100">
+                          <p className="text-xs font-black text-slate-900">
+                            {selectedCustomerAddress.name || 'Customer'}
+                          </p>
+                          <p className="text-xs font-mono text-slate-600">
+                            {selectedCustomerAddress.phone}
+                          </p>
+                          <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                            {selectedCustomerAddress.address}
+                            {selectedCustomerAddress.deliveryArea ? `, ${selectedCustomerAddress.deliveryArea}` : ''}
+                          </p>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => setIsAddressModalOpen(true)}
+                          className="pt-1 text-xs text-teal-700 font-bold flex items-center gap-1.5 cursor-pointer hover:underline text-left"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>+ Add Shipping Address</span>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Mobile "You May Also Like" Upsell Section (Real Store Products) */}
                     {cartUpsellProducts.length > 0 && (
                       <div className="md:hidden pt-4 border-t border-slate-100 space-y-3">
@@ -5728,7 +5779,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       setIsCartOpen(false);
                       navigateTo('checkout');
                     }}
-                    className="group w-full py-3.5 px-5 bg-[#70b444] hover:bg-[#5ea134] active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-2xl transition-all shadow-lg shadow-green-700/25 cursor-pointer flex items-center justify-center gap-2"
+                    className="group w-full py-3.5 px-5 bg-[#2563eb] hover:bg-[#5ea134] active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-2xl transition-all shadow-lg shadow-green-700/25 cursor-pointer flex items-center justify-center gap-2"
                   >
                     <span>Check out</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -6004,7 +6055,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     <button
                       type="submit"
                       disabled={isSubmittingQuote}
-                      className="flex-1 sm:flex-none px-6 py-2.5 rounded-full bg-[#70b444] hover:bg-[#5ea134] text-white font-bold text-xs sm:text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
+                      className="flex-1 sm:flex-none px-6 py-2.5 rounded-full bg-[#2563eb] hover:bg-[#5ea134] text-white font-bold text-xs sm:text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
                     >
                       {isSubmittingQuote ? 'Submitting...' : 'Submit Quote Request →'}
                     </button>
@@ -6048,7 +6099,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 {/* Header */}
                 <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-lg bg-green-50 text-[#70b444]">
+                    <div className="p-1.5 rounded-lg bg-green-50 text-[#2563eb]">
                       <LayoutGrid className="w-5 h-5" />
                     </div>
                     <div>
@@ -6069,7 +6120,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 {/* Category Items List with Subcategories */}
                 <div className="p-4 overflow-y-auto space-y-3 pb-8">
                   <div className="grid grid-cols-2 gap-3">
-                    {(realCategoryItems && realCategoryItems.length > 0 ? realCategoryItems : allCategoryNames.map(name => ({ id: name, name, subcategories: [] }))).map((cat: any) => {
+                    {((realCategoryItems && realCategoryItems.length > 0) 
+                      ? [...realCategoryItems].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) 
+                      : allCategoryNames.map(name => ({ id: name, name, subcategories: [] }))).map((cat: any) => {
                       const catName = cat.name;
                       const lower = (catName || '').toLowerCase().trim();
                       const catImg = cat.image || 
@@ -6083,7 +6136,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           key={cat.id || catName}
                           className={`p-3 rounded-2xl border transition-all text-left flex flex-col justify-between ${
                             isSelected 
-                              ? 'border-[#70b444] bg-green-50/40 shadow-xs ring-1 ring-[#70b444]/30' 
+                              ? 'border-[#2563eb] bg-green-50/40 shadow-xs ring-1 ring-[#2563eb]/30' 
                               : 'border-slate-200/90 bg-white hover:border-slate-300'
                           }`}
                         >
@@ -6119,7 +6172,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                     setIsMobileCategorySheetOpen(false);
                                     navigateTo('shop');
                                   }}
-                                  className="px-2 py-0.5 text-[9px] font-medium bg-slate-100 hover:bg-[#70b444] hover:text-white text-slate-700 rounded-md transition-colors truncate max-w-full cursor-pointer"
+                                  className="px-2 py-0.5 text-[9px] font-medium bg-slate-100 hover:bg-[#2563eb] hover:text-white text-slate-700 rounded-md transition-colors truncate max-w-full cursor-pointer"
                                 >
                                   {sub.name}
                                 </button>
@@ -6166,10 +6219,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 }
               }}
               className={`flex flex-col items-center justify-center flex-1 py-1 px-1 transition-colors cursor-pointer ${
-                activeNav === 'home' && !isMobileCategorySheetOpen ? 'text-[#70b444]' : 'text-slate-600 hover:text-slate-900'
+                activeNav === 'home' && !isMobileCategorySheetOpen ? 'text-[#2563eb]' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeNav === 'home' && !isMobileCategorySheetOpen ? 'bg-green-50 text-[#70b444]' : ''}`}>
+              <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeNav === 'home' && !isMobileCategorySheetOpen ? 'bg-green-50 text-[#2563eb]' : ''}`}>
                 <Home className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-semibold mt-0.5 tracking-tight">Home</span>
@@ -6185,10 +6238,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 navigateTo('shop');
               }}
               className={`flex flex-col items-center justify-center flex-1 py-1 px-1 transition-colors cursor-pointer ${
-                activeNav === 'shop' && !isMobileCategorySheetOpen && selectedCategoryCheckbox === 'All' ? 'text-[#70b444]' : 'text-slate-600 hover:text-slate-900'
+                activeNav === 'shop' && !isMobileCategorySheetOpen && selectedCategoryCheckbox === 'All' ? 'text-[#2563eb]' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeNav === 'shop' && !isMobileCategorySheetOpen && selectedCategoryCheckbox === 'All' ? 'bg-green-50 text-[#70b444]' : ''}`}>
+              <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeNav === 'shop' && !isMobileCategorySheetOpen && selectedCategoryCheckbox === 'All' ? 'bg-green-50 text-[#2563eb]' : ''}`}>
                 <ShoppingBag className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-semibold mt-0.5 tracking-tight">Shop</span>
@@ -6201,10 +6254,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 setIsMobileCategorySheetOpen(prev => !prev);
               }}
               className={`flex flex-col items-center justify-center flex-1 py-1 px-1 transition-colors cursor-pointer ${
-                isMobileCategorySheetOpen || (activeNav === 'shop' && selectedCategoryCheckbox !== 'All') ? 'text-[#70b444]' : 'text-slate-600 hover:text-slate-900'
+                isMobileCategorySheetOpen || (activeNav === 'shop' && selectedCategoryCheckbox !== 'All') ? 'text-[#2563eb]' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <div className={`p-1 rounded-full transition-transform active:scale-90 ${isMobileCategorySheetOpen || (activeNav === 'shop' && selectedCategoryCheckbox !== 'All') ? 'bg-green-50 text-[#70b444]' : ''}`}>
+              <div className={`p-1 rounded-full transition-transform active:scale-90 ${isMobileCategorySheetOpen || (activeNav === 'shop' && selectedCategoryCheckbox !== 'All') ? 'bg-green-50 text-[#2563eb]' : ''}`}>
                 <LayoutGrid className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-semibold mt-0.5 tracking-tight">Category</span>
@@ -6219,10 +6272,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 navigateTo('collections');
               }}
               className={`flex flex-col items-center justify-center flex-1 py-1 px-1 transition-colors cursor-pointer ${
-                activeNav === 'collections' && !isMobileCategorySheetOpen ? 'text-[#70b444]' : 'text-slate-600 hover:text-slate-900'
+                activeNav === 'collections' && !isMobileCategorySheetOpen ? 'text-[#2563eb]' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeNav === 'collections' && !isMobileCategorySheetOpen ? 'bg-green-50 text-[#70b444]' : ''}`}>
+              <div className={`p-1 rounded-full transition-transform active:scale-90 ${activeNav === 'collections' && !isMobileCategorySheetOpen ? 'bg-green-50 text-[#2563eb]' : ''}`}>
                 <Sparkles className="w-5 h-5" />
               </div>
               <span className="text-[10px] font-semibold mt-0.5 tracking-tight">Collection</span>
@@ -6240,7 +6293,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               <div className="relative p-1 rounded-full transition-transform active:scale-90">
                 <ShoppingCart className="w-5 h-5 text-slate-800" />
                 {totalCartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-[#70b444] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                  <span className="absolute -top-0.5 -right-0.5 bg-[#2563eb] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce">
                     {totalCartCount > 99 ? '99+' : totalCartCount}
                   </span>
                 )}
@@ -6252,6 +6305,21 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           </nav>
         </>
       )}
+
+      {/* ============================================================
+          DYNAMIC ADDRESS SELECTION & MANAGEMENT MODAL (Matching Arogga)
+          ============================================================ */}
+      <React.Suspense fallback={null}>
+        <AddressModal
+          isOpen={isAddressModalOpen}
+          onClose={() => setIsAddressModalOpen(false)}
+          selectedAddress={selectedCustomerAddress}
+          onSelectAddress={(addr) => {
+            setSelectedCustomerAddress(addr);
+            setIsAddressModalOpen(false);
+          }}
+        />
+      </React.Suspense>
 
     </div>
   );

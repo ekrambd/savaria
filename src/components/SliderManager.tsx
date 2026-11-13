@@ -69,7 +69,7 @@ export default function SliderManager() {
 
   // Edit Modal State
   const [editingBanner, setEditingBanner] = useState<HeroBannerItem | null>(null);
-  const [primaryColor, setPrimaryColor] = useState('#0f766e');
+  const [primaryColor, setPrimaryColor] = useState('#2563eb');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [bannerUploadTab, setBannerUploadTab] = useState<'website' | 'mobile'>('website');
 
@@ -561,7 +561,7 @@ export default function SliderManager() {
                     />
                   ) : (
                     <div className="text-center">
-                      <span className="text-[#16a34a] font-black text-lg sm:text-xl tracking-tight">
+                      <span className="text-[#2563eb] font-black text-lg sm:text-xl tracking-tight">
                         {promoStrip.iconText || 'MB'}
                       </span>
                     </div>

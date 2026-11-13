@@ -16,8 +16,8 @@ interface ProfileSettingsProps {
 
 const BRAND_COLOR_PRESETS = [
   { name: 'Rose Red (Default)', hex: '#e11d48' },
-  { name: 'Teal Green', hex: '#0f766e' },
-  { name: 'Emerald Green', hex: '#16a34a' },
+  { name: 'Teal Green', hex: '#2563eb' },
+  { name: 'Emerald Green', hex: '#2563eb' },
   { name: 'Royal Blue', hex: '#2563eb' },
   { name: 'Indigo Purple', hex: '#6366f1' },
   { name: 'Deep Orange', hex: '#ea580c' },

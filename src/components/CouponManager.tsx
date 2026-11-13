@@ -7,7 +7,7 @@ import { ConfirmDialog } from './ui/ConfirmDialog';
 
 export default function CouponManager() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [primaryColor, setPrimaryColor] = useState('#0f766e');
+  const [primaryColor, setPrimaryColor] = useState('#2563eb');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'All' | 'Active' | 'Inactive' | 'Public' | 'Private'>('All');

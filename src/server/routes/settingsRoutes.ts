@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { storeSettings, updateStoreSettings, storeOrders, saveOrdersToDisk, loadSettingsFromDisk } from '../data/store';
 import { PathaoCourierService } from '../services/pathaoService';
+import { SteadfastCourierService } from '../services/steadfastService';
 import { FacebookCapiService } from '../services/facebookCapiService';
 import { requireAdmin } from '../middleware/adminAuth';
 import { cacheResponse } from '../middleware/cacheMiddleware';
@@ -22,6 +23,7 @@ const handleGetSettings = (_req: any, res: any) => {
     metaApiToken: _metaApiToken, 
     pathaoClientSecret: _pathaoClientSecret,
     pathaoClientPassword: _pathaoClientPassword,
+    steadfastSecretKey: _steadfastSecretKey,
     ...publicSettings 
   } = freshSettings || storeSettings;
   res.json({
@@ -54,7 +56,16 @@ settingsRouter.post('/ecom', requireAdmin, handlePostSettings);
 // ==========================================
 courierRouter.post('/pathao/test', requireAdmin, async (req, res) => {
   try {
-    const creds = req.body?.credentials || req.body;
+    const freshSettings = loadSettingsFromDisk();
+    const creds = req.body?.credentials || {
+      clientId: req.body?.clientId || freshSettings?.pathaoClientId,
+      clientSecret: req.body?.clientSecret || freshSettings?.pathaoClientSecret,
+      clientEmail: req.body?.clientEmail || freshSettings?.pathaoClientEmail,
+      clientPassword: req.body?.clientPassword || freshSettings?.pathaoClientPassword,
+      storeId: req.body?.storeId || freshSettings?.pathaoStoreId,
+      environment: req.body?.environment || freshSettings?.pathaoEnvironment,
+      baseUrl: req.body?.baseUrl || freshSettings?.pathaoBaseUrl
+    };
     const result = await PathaoCourierService.testConnection(creds);
     res.json(result);
   } catch (err: any) {
@@ -64,8 +75,17 @@ courierRouter.post('/pathao/test', requireAdmin, async (req, res) => {
 
 courierRouter.get('/pathao/stores', requireAdmin, async (req, res) => {
   try {
-    const creds = req.query as any;
-    const result = await PathaoCourierService.getStores(creds);
+    const freshSettings = loadSettingsFromDisk();
+    const creds = (req.query && Object.keys(req.query).length > 0) ? req.query : {
+      clientId: freshSettings?.pathaoClientId,
+      clientSecret: freshSettings?.pathaoClientSecret,
+      clientEmail: freshSettings?.pathaoClientEmail,
+      clientPassword: freshSettings?.pathaoClientPassword,
+      storeId: freshSettings?.pathaoStoreId,
+      environment: freshSettings?.pathaoEnvironment,
+      baseUrl: freshSettings?.pathaoBaseUrl
+    };
+    const result = await PathaoCourierService.getStores(creds as any);
     res.json(result);
   } catch (err: any) {
     res.status(502).json({ success: false, message: err.message || 'Failed to fetch Pathao stores' });
@@ -123,7 +143,20 @@ courierRouter.post('/pathao/price-plan', async (req, res) => {
 
 courierRouter.post('/pathao/dispatch', requireAdmin, async (req, res) => {
   try {
-    const result = await PathaoCourierService.dispatchOrder(req.body);
+    const freshSettings = loadSettingsFromDisk();
+    const credentials = req.body?.credentials || {
+      clientId: freshSettings?.pathaoClientId,
+      clientSecret: freshSettings?.pathaoClientSecret,
+      clientEmail: freshSettings?.pathaoClientEmail,
+      clientPassword: freshSettings?.pathaoClientPassword,
+      storeId: freshSettings?.pathaoStoreId,
+      environment: freshSettings?.pathaoEnvironment,
+      baseUrl: freshSettings?.pathaoBaseUrl
+    };
+    const result = await PathaoCourierService.dispatchOrder({
+      ...req.body,
+      credentials
+    });
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Pathao dispatch failed' });
@@ -176,6 +209,57 @@ courierRouter.post('/pathao/webhook', async (req, res) => {
     res.status(200).json({ success: true, message: 'Webhook event processed' });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// STEADFAST COURIER DISPATCH & INTEGRATION
+// ==========================================
+courierRouter.post('/steadfast/test', requireAdmin, async (req, res) => {
+  try {
+    const freshSettings = loadSettingsFromDisk();
+    const creds = req.body?.credentials || {
+      apiKey: req.body?.apiKey || freshSettings?.steadfastApiKey,
+      secretKey: req.body?.secretKey || freshSettings?.steadfastSecretKey,
+      baseUrl: req.body?.baseUrl || freshSettings?.steadfastBaseUrl
+    };
+    const result = await SteadfastCourierService.testConnection(creds);
+    res.json(result);
+  } catch (err: any) {
+    res.status(502).json({ success: false, message: err.message || 'Steadfast credentials connection test failed' });
+  }
+});
+
+courierRouter.post('/steadfast/dispatch', requireAdmin, async (req, res) => {
+  try {
+    const freshSettings = loadSettingsFromDisk();
+    const credentials = req.body?.credentials || {
+      apiKey: freshSettings?.steadfastApiKey,
+      secretKey: freshSettings?.steadfastSecretKey,
+      baseUrl: freshSettings?.steadfastBaseUrl
+    };
+    const result = await SteadfastCourierService.dispatchOrder({
+      order: req.body?.order || req.body,
+      credentials
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Steadfast dispatch failed' });
+  }
+});
+
+courierRouter.get('/steadfast/status/:trackingCode', requireAdmin, async (req, res) => {
+  try {
+    const freshSettings = loadSettingsFromDisk();
+    const credentials = {
+      apiKey: freshSettings?.steadfastApiKey,
+      secretKey: freshSettings?.steadfastSecretKey,
+      baseUrl: freshSettings?.steadfastBaseUrl
+    };
+    const result = await SteadfastCourierService.getStatus(req.params.trackingCode, credentials);
+    res.json(result);
+  } catch (err: any) {
+    res.status(502).json({ success: false, message: err.message || 'Steadfast status check failed' });
   }
 });
 

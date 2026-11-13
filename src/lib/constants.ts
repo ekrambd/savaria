@@ -230,13 +230,15 @@ export const DEFAULT_ABOUT_SETTINGS: import('../types').AboutPageSettings = {
 
 export const DEFAULT_FLASH_SALE_SETTINGS: FlashSaleSettings = {
   enabled: true,
-  productId: '',
-  badgeTag: '',
+  campaignTitle: '11.11 MEGA FLASH SALE',
+  badgeTag: 'LIMITED TIME DEAL',
   title: '',
-  subtitle: '',
+  subtitle: 'Exclusive limited-time discount on top products',
   customImage: '',
   flashPrice: 0,
   originalPrice: 0,
+  items: [],
+  startDate: new Date().toISOString(),
   endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   buttonText: 'SHOP NOW',
   showVideoSection: false,
@@ -714,7 +716,7 @@ export const DEFAULT_ECOM_SETTINGS: EcomSettings = {
     linkedin: '',
     whatsapp: 'https://wa.me/8801635311494'
   },
-  primaryColor: '#70b444',
+  primaryColor: '#2563eb',
   gtmId: '',
   deliveryChargeInsideDhaka: 70,
   deliveryChargeOutsideDhaka: 130,

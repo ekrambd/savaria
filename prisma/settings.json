@@ -1,19 +1,19 @@
 {
   "headerSettings": {
     "showTopBar": true,
-    "phone": "01910-646547",
-    "email": "meghbristifashion@gmail.com",
+    "phone": "+880 1995-996313",
+    "email": "savariabd@gmail.com",
     "socialLinks": {
-      "facebook": "https://www.facebook.com/MeghBristiFashion",
+      "facebook": "",
       "youtube": "",
-      "instagram": "https://instagram.com/meghbristifashion",
+      "instagram": "",
       "linkedin": "",
       "tiktok": "",
-      "whatsapp": "https://wa.me/8801635311494",
+      "whatsapp": "",
       "twitter": ""
     },
-    "logoUrl": "/uploads/file-1793773029433-548634670.webp",
-    "brandName": "Megh Bristi Fashion",
+    "logoUrl": "/uploads/file-1794560260599-40204394.webp",
+    "brandName": "Savaria BD",
     "menuItems": [
       {
         "id": "menu-home",
@@ -55,15 +55,15 @@
     "showVipButton": false,
     "searchPlaceholder": "Search Salwar Kameez, Saree, Pakistani Suits..."
   },
-  "storeName": "Megh Bristi Fashion",
-  "companyName": "Megh Bristi Fashion",
-  "storeLogo": "/uploads/file-1793773029433-548634670.webp",
-  "storeTagline": "Welcome to Megh Bristi Fashion 🌸 | Megh Bristi Fashion – Your fashion partner. Trendy Salwar Kameez, Saree, Pakistani & Kids wear. Mens wear. Best quality, best price, delivered with care across Bangladesh.",
-  "topAnnouncementText": "🌸 Welcome to Megh Bristi Fashion | ইনবক্স ও WhatsApp এ অর্ডার করুন: 01910-646547 | সারাদেশে ক্যাশ অন ডেলিভারি",
-  "contactEmail": "meghbristifashion@gmail.com",
-  "contactPhone": "01910-646547",
-  "storeAddress": "House/59,Road 07,Block-G,(Near by 10 tala Markete) South Banasree , Dhaka., Dhaka, Bangladesh",
-  "footerDescription": "Welcome to Megh Bristi Fashion 🌸 | Megh Bristi Fashion – Your fashion partner. Trendy Salwar Kameez, Saree, Pakistani & Kids wear. Mens wear. Best quality, best price, delivered with care across Bangladesh.",
+  "storeName": "Savaria BD",
+  "companyName": "Savaria BD",
+  "storeLogo": "/uploads/file-1794560260599-40204394.webp",
+  "storeTagline": "Welcome to Savaria BD",
+  "topAnnouncementText": "🌸 Welcome to Savaria BD",
+  "contactEmail": "savariabd@gmail.com",
+  "contactPhone": "+880 1995-996313",
+  "storeAddress": "Kustia",
+  "footerDescription": "Welcome to Savaria BD",
   "gtmId": "",
   "deliveryChargeInsideDhaka": 70,
   "deliveryChargeOutsideDhaka": 120,
@@ -303,6 +303,18 @@
     "productImage": ""
   },
   "freeDeliveryMinPurchase": 3000,
+  "promoStrip": {
+    "enabled": true,
+    "badge": "SPECIAL FESTIVE OFFER 🌸",
+    "title": "Exclusive Trendy Salwar Kameez, Saree & Pakistani Suits at Best Prices with Home Delivery Across Bangladesh.",
+    "buttonText": "Shop Collection",
+    "buttonLink": "/shop",
+    "iconText": "MB",
+    "iconUrl": "/images/meghbristi-brand-logo.svg",
+    "bgColor": "#e9f5ee",
+    "borderColor": "#c6e4d2",
+    "buttonColor": "#166534"
+  },
   "deliveryMethods": [
     {
       "id": "dm-1793786371135",
@@ -351,59 +363,15 @@
   "primaryColor": "#70b444",
   "heroBanners": [
     {
-      "id": "hb-1794227261538",
-      "title": "",
-      "subtitle": "",
-      "badge": "",
-      "discountText": "",
-      "showDiscount": false,
-      "imageOnly": true,
-      "bgGradient": "from-slate-900 via-rose-950 to-slate-900",
-      "imageUrl": "/uploads/file-1794227267432-455413045.jpg",
-      "mobileImageUrl": "",
-      "link": "",
-      "actionType": "product",
-      "productId": "prod-1794056190297",
-      "mediaType": "image",
-      "videoType": "youtube",
-      "videoUrl": "",
-      "youtubeUrl": "",
-      "buttonText": "BUY NOW",
-      "secondaryButtonText": "",
-      "secondaryButtonLink": ""
-    },
-    {
-      "id": "hb-1794227310041",
-      "title": "",
-      "subtitle": "",
-      "badge": "",
-      "discountText": "",
-      "showDiscount": false,
-      "imageOnly": true,
-      "bgGradient": "from-slate-900 via-rose-950 to-slate-900",
-      "imageUrl": "/uploads/file-1794227314697-199779133.jpg",
-      "mobileImageUrl": "",
-      "link": "",
-      "actionType": "product",
-      "productId": "prod-1794056414000",
-      "mediaType": "image",
-      "videoType": "youtube",
-      "videoUrl": "",
-      "youtubeUrl": "",
-      "buttonText": "BUY NOW",
-      "secondaryButtonText": "",
-      "secondaryButtonLink": ""
-    },
-    {
       "id": "hb-1794227328374",
-      "title": "",
+      "title": "Hijab Cota Stone",
       "subtitle": "",
       "badge": "",
       "discountText": "",
       "showDiscount": false,
       "imageOnly": true,
       "bgGradient": "from-slate-900 via-rose-950 to-slate-900",
-      "imageUrl": "/uploads/file-1794227334082-488203550.jpg",
+      "imageUrl": "/uploads/file-1794560404632-119910379.jpg",
       "mobileImageUrl": "",
       "link": "",
       "actionType": "product",
@@ -507,7 +475,36 @@
     "originalPrice": 1400,
     "endDate": "2026-11-20T23:59:59.000Z",
     "buttonText": "SHOP FLASH DEAL",
-    "showVideoSection": false
+    "showVideoSection": false,
+    "campaignTitle": "11.11 MEGA FLASH SALE",
+    "startDate": "2026-11-13T09:57:41.717Z",
+    "items": [
+      {
+        "productId": "prod-1793775446870",
+        "flashPrice": 1200,
+        "originalPrice": 1400
+      },
+      {
+        "productId": "prod-1794055327899",
+        "flashPrice": 480,
+        "originalPrice": 850
+      },
+      {
+        "productId": "prod-1794055274859",
+        "flashPrice": 480,
+        "originalPrice": 850
+      },
+      {
+        "productId": "prod-1793971819122",
+        "flashPrice": 1264,
+        "originalPrice": 1850
+      },
+      {
+        "productId": "prod-1793779268621",
+        "flashPrice": 640,
+        "originalPrice": 900
+      }
+    ]
   },
   "highlightSpotlight": {
     "enabled": true,
@@ -522,12 +519,12 @@
     "buttonLink": "/shop"
   },
   "socialLinks": {
-    "facebook": "https://www.facebook.com/MeghBristiFashion",
+    "facebook": "",
     "youtube": "",
-    "instagram": "https://instagram.com/meghbristifashion",
+    "instagram": "",
     "linkedin": "",
     "tiktok": "",
-    "whatsapp": "https://wa.me/8801635311494",
+    "whatsapp": "",
     "twitter": ""
   },
   "paymentGateways": [
@@ -827,16 +824,16 @@
   ],
   "maintenanceMode": false,
   "instituteInfo": {
-    "name": "Megh Bristi Fashion",
+    "name": "Savaria BD",
     "regNo": "",
-    "phone": "01910-646547",
-    "email": "meghbristifashion@gmail.com",
-    "address": "House/59,Road 07,Block-G,(Near by 10 tala Markete) South Banasree , Dhaka., Dhaka, Bangladesh",
-    "description": "Welcome to Megh Bristi Fashion 🌸 | Megh Bristi Fashion – Your fashion partner. Trendy Salwar Kameez, Saree, Pakistani & Kids wear. Mens wear. Best quality, best price, delivered with care across Bangladesh.",
+    "phone": "+880 1995-996313",
+    "email": "savariabd@gmail.com",
+    "address": "Kustia",
+    "description": "Welcome to Savaria BD",
     "industry": "Luxury Fragrance & Lifestyle",
     "bearingRollLocation": "Dhaka",
-    "logo": "/uploads/file-1793773029433-548634670.webp",
-    "street": "House/59,Road 07,Block-G,(Near by 10 tala Markete) South Banasree , Dhaka., Dhaka, Bangladesh"
+    "logo": "/uploads/file-1794560260599-40204394.webp",
+    "street": "Kustia"
   },
   "heroSliderInterval": 5,
   "heroVideoInterval": 10,
@@ -876,17 +873,5 @@
       "displayOrder": 2,
       "coverImage": "/uploads/file-1794246437294-252383684.png"
     }
-  ],
-  "promoStrip": {
-    "enabled": true,
-    "badge": "SPECIAL FESTIVE OFFER 🌸",
-    "title": "Exclusive Trendy Salwar Kameez, Saree & Pakistani Suits at Best Prices with Home Delivery Across Bangladesh.",
-    "buttonText": "Shop Collection",
-    "buttonLink": "/shop",
-    "iconText": "MB",
-    "iconUrl": "/images/meghbristi-brand-logo.svg",
-    "bgColor": "#e9f5ee",
-    "borderColor": "#c6e4d2",
-    "buttonColor": "#166534"
-  }
+  ]
 }

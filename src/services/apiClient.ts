@@ -123,6 +123,28 @@ export class ApiClient {
     });
   }
 
+  // Steadfast Courier Integration
+  static testSteadfast(credentials?: any): Promise<{ success: boolean; message?: string; balance?: number }> {
+    return this.request('/courier/steadfast/test', {
+      method: 'POST',
+      body: JSON.stringify({ credentials })
+    });
+  }
+
+  static dispatchSteadfast(payload: {
+    order: BookOrder;
+    credentials?: any;
+  }): Promise<{ success: boolean; consignmentId?: string; trackingCode?: string; message?: string }> {
+    return this.request('/courier/steadfast/dispatch', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  static getSteadfastStatus(trackingCode: string): Promise<{ success: boolean; status: string }> {
+    return this.request(`/courier/steadfast/status/${encodeURIComponent(trackingCode)}`);
+  }
+
   static getPathaoStores(credentials?: any): Promise<any> {
     return this.request('/courier/pathao/stores', {
       method: 'GET'
@@ -216,6 +238,22 @@ export class ApiClient {
     });
   }
 
+
+  // Customer Directory & Custom Labels
+  static getCustomerList(): Promise<{ success: boolean; customers: Customer[] }> {
+    return this.request<{ success: boolean; customers: Customer[] }>('/customers/admin/list');
+  }
+
+  static getCustomerDetails(phone: string): Promise<{ success: boolean; customer: Customer }> {
+    return this.request<{ success: boolean; customer: Customer }>(`/customers/admin/details/${encodeURIComponent(phone)}`);
+  }
+
+  static updateCustomerLabel(payload: { phone: string; label: string; notes?: string }): Promise<{ success: boolean; message: string; label: string }> {
+    return this.request<{ success: boolean; message: string; label: string }>('/customers/admin/label', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
 
   // Hero Slider & Video Endpoints
   static getSliders(): Promise<{ success: boolean; heroBanners: HeroBannerItem[]; heroSliderInterval: number; heroVideoInterval: number }> {
