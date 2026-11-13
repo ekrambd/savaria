@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ac-1793788524117-vk22d",
+    "customerPhone": "01315861003",
+    "customerName": "Rakibul Hasan",
+    "customerAddress": "adabor,dhaka",
+    "customerDistrict": "Dhaka",
+    "customerEmail": "",
+    "items": [
+      {
+        "productId": "prod-1793781757585",
+        "productTitle": "Kids Set2 female",
+        "productImage": "/uploads/file-1793781771955-63144994.jpg",
+        "quantity": 1,
+        "unitPrice": 900,
+        "totalPrice": 900
+      },
+      {
+        "productId": "prod-1793781653017",
+        "productTitle": "One piece 4",
+        "productImage": "/uploads/file-1793781665055-78331760.jpg",
+        "quantity": 1,
+        "unitPrice": 800,
+        "totalPrice": 800
+      }
+    ],
+    "subtotal": 1700,
+    "deliveryCharge": 70,
+    "totalAmount": 1770,
+    "status": "self_recovered",
+    "source": "storefront_checkout",
+    "lastActivityAt": "2026-11-04T10:35:32.299Z",
+    "createdAt": "2026-11-04T10:35:24.117Z",
+    "updatedAt": "2026-11-04T10:35:34.505Z",
+    "recoveredOrderId": "ORD-2026-5244",
+    "recoveredAt": "2026-11-04T10:35:34.505Z"
+  }
+]

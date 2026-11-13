@@ -1,0 +1,55 @@
+[
+  {
+    "id": "ORD-2026-5244",
+    "customerName": "Rakibul Hasan",
+    "name": "Rakibul Hasan",
+    "phone": "01315861003",
+    "address": "adabor,dhaka",
+    "deliveryZone": "Steadfast",
+    "deliveryFee": 70,
+    "deliveryCharge": 70,
+    "items": [
+      {
+        "product": {
+          "id": "prod-1793781757585",
+          "title": "Kids Set2 female",
+          "price": 900,
+          "regularPrice": 1200,
+          "image": "/uploads/file-1793781771955-63144994.jpg",
+          "category": "Kids Fashion",
+          "stock": 100,
+          "isAvailable": true
+        },
+        "quantity": 1
+      },
+      {
+        "product": {
+          "id": "prod-1793781653017",
+          "title": "One piece 4",
+          "price": 800,
+          "regularPrice": 900,
+          "image": "/uploads/file-1793781665055-78331760.jpg",
+          "category": "Womens",
+          "stock": 100,
+          "isAvailable": true
+        },
+        "quantity": 1
+      }
+    ],
+    "quantity": 2,
+    "totalPrice": 1770,
+    "totalAmount": 1770,
+    "productName": "Kids Set2 female (x1), One piece 4 (x1)",
+    "productTitle": "Kids Set2 female (x1), One piece 4 (x1)",
+    "status": "Pending",
+    "orderType": "storefront",
+    "paymentMethod": "Cash on Delivery",
+    "paymentGateway": "Cash on Delivery",
+    "createdAt": "2026-11-04T10:35:34.505Z",
+    "orderDate": "2026-11-04T10:35:34.505Z",
+    "_shardMeta": {
+      "shardIndex": 3,
+      "partition": "orders_2026_11"
+    }
+  }
+]

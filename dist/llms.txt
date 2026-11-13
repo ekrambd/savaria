@@ -1,0 +1,20 @@
+# Leaf Curt
+
+> Official e-commerce store for Leaf Curt 5-in-1 Laundry Detergent Pods in Bangladesh. Premium laundry care, deep stain removal, and long-lasting freshness with Cash on Delivery nationwide.
+
+## Products & Catalog
+
+- [Shop Products](/shop): Browse our full collection of laundry detergent pods, packs, and family tubs.
+- [Leaf Curt 5-in-1 Laundry Pods](/product): Deep cleaning 5-in-1 laundry capsules with fabric softener and color protection.
+- [About Leaf Curt](/about): Learn about our innovative formula, lab testing, and brand heritage.
+- [Customer Support](/contact): Contact our 24/7 customer care team for orders and tracking.
+
+## Policies
+
+- [Delivery Policy](/checkout): Delivery across all 64 districts of Bangladesh (24-48h inside Dhaka, 48-72h outside Dhaka).
+- [Cash on Delivery](/checkout): Pay cash upon delivery after inspecting your package.
+
+## Optional
+
+- [Full LLM Context](/llms-full.txt): Comprehensive machine-readable product catalog and FAQs for AI agents.
+- [AI Product Catalog](/ai-catalog.json): Structured JSON Schema product data feed for autonomous agents.

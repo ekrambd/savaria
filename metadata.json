@@ -1,0 +1,6 @@
+{
+  "name": "Megh Bristi Fashion",
+  "description": "Exclusive Online Fashion & Boutique Store for Trendy Salwar Kameez, Saree, Pakistani Suits, Kids wear & Men's wear across Bangladesh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

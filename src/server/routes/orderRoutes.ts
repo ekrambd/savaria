@@ -1,0 +1,563 @@
+import { Router } from 'express';
+import { checkoutRateLimiter } from '../middleware/rateLimiter';
+import { storeOrders, storeProducts, storeSettings, saveOrdersToDisk, saveProductsToDisk, syncSelfRecoveredCart, revertAbandonedCartOnOrderDelete } from '../data/store';
+import { BookOrder } from '../../types';
+import { cacheResponse } from '../middleware/cacheMiddleware';
+import { globalCache } from '../services/cacheEngine';
+import { shardService } from '../services/shardService';
+import { redundancyService } from '../services/redundancyService';
+import { prisma } from '../db';
+import { requireAdmin } from '../middleware/adminAuth';
+import { FacebookCapiService } from '../services/facebookCapiService';
+import { paginateInMemoryKeyset } from '../services/keysetPagination';
+import { validateOrderCustomerDetails } from '../../lib/orderValidation';
+
+export const orderRouter = Router();
+
+// Enterprise Order Creation Idempotency Cache (Prevents double order & stock deduction on double clicks)
+const orderIdempotencyMap = new Map<string, { order: BookOrder; timestamp: number }>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of orderIdempotencyMap.entries()) {
+    if (now - val.timestamp > 120_000) orderIdempotencyMap.delete(key);
+  }
+}, 300_000);
+
+// GET Orders with Keyset (Seek Method) Pagination & Zero N+1 Eager Loading
+orderRouter.get('/', requireAdmin, cacheResponse({ ttlSeconds: 15, staleWhileRevalidateSeconds: 30, tag: 'orders' }), async (req, res) => {
+  const includeCustomer = req.query.include === 'customer' || req.query.withCustomer === 'true';
+  const statusFilter = req.query.status ? String(req.query.status).trim() : null;
+  const isKeysetRequested = Boolean(req.query.cursor || req.query.limit || req.query.keyset === 'true');
+
+  // Deduplicate storeOrders by ID before serving
+  const seenIds = new Set<string>();
+  let orders = storeOrders.filter(o => {
+    if (!o.id) return true;
+    if (seenIds.has(o.id)) return false;
+    seenIds.add(o.id);
+    return true;
+  });
+
+  // Optional status filter
+  if (statusFilter && statusFilter.toLowerCase() !== 'all') {
+    orders = orders.filter(o => (o.status || '').toLowerCase() === statusFilter.toLowerCase());
+  }
+
+  // Ensure deterministic DESCENDING order by (createdAt, id)
+  orders.sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    if (timeB !== timeA) return timeB - timeA;
+    return (b.id || '').localeCompare(a.id || '');
+  });
+
+  // 1. Keyset Seek Pagination Mode
+  if (isKeysetRequested) {
+    const limit = Number(req.query.limit) || 20;
+    const paginated = paginateInMemoryKeyset(orders, req.query.cursor as string, limit);
+
+    // Eager load customer data for ONLY the current page items
+    if (includeCustomer && paginated.data.length > 0) {
+      const phones = Array.from(new Set(paginated.data.map(o => o.phone).filter(Boolean)));
+      try {
+        const customers = await prisma.customer.findMany({
+          where: { phone: { in: phones } }
+        });
+        const customerMap = new Map(customers.map(c => [c.phone, c]));
+        paginated.data = paginated.data.map(o => ({
+          ...o,
+          customerDetails: o.phone ? (customerMap.get(o.phone) || null) : null
+        }));
+      } catch {}
+    }
+
+    return res.json(paginated);
+  }
+
+  // 2. Legacy Full-List Mode (for backwards compatibility with existing UI components)
+  if (includeCustomer && orders.length > 0) {
+    const phones = Array.from(new Set(orders.map(o => o.phone).filter(Boolean)));
+    try {
+      const customers = await prisma.customer.findMany({
+        where: { phone: { in: phones } }
+      });
+      const customerMap = new Map(customers.map(c => [c.phone, c]));
+      orders = orders.map(o => ({
+        ...o,
+        customerDetails: o.phone ? (customerMap.get(o.phone) || null) : null
+      }));
+    } catch {}
+  }
+
+  res.json(orders);
+});
+
+// GET /api/orders/track - Public 1-Click Order Tracking by Phone or Order ID (Free, Zero API cost)
+orderRouter.get('/track', (req, res) => {
+  const query = String(req.query.q || req.query.phone || req.query.id || '').trim();
+  if (!query) {
+    return res.status(400).json({ success: false, message: 'Please provide a phone number or Order ID' });
+  }
+
+  const cleanDigits = query.replace(/\D/g, '');
+  const matched = storeOrders.filter(o => {
+    const orderPhone = (o.customerPhone || o.phone || '').replace(/\D/g, '');
+    const isPhoneMatch = Boolean(cleanDigits && orderPhone && (orderPhone.endsWith(cleanDigits) || cleanDigits.endsWith(orderPhone)));
+    const isIdMatch = Boolean(o.id && o.id.toLowerCase() === query.toLowerCase());
+    return isPhoneMatch || isIdMatch;
+  });
+
+  return res.json({
+    success: true,
+    orders: matched
+  });
+});
+
+// GET Sharding & Partition info for Orders
+orderRouter.get('/shards/stats', (_req, res) => {
+  const counterStats = shardService.getCounterStats('orders_total');
+  const partitions: Record<string, number> = {};
+
+  for (const order of storeOrders) {
+    const shardIndex = shardService.getShardIndex(order.id || '');
+    partitions[`shard_${shardIndex}`] = (partitions[`shard_${shardIndex}`] || 0) + 1;
+  }
+
+  res.json({
+    success: true,
+    totalOrders: storeOrders.length,
+    counterStats,
+    distribution: partitions
+  });
+});
+
+// POST /api/orders/checkout - Secure Server-Side Atomic Order Validation & Placement (N+1 queries prevented)
+orderRouter.post('/checkout', checkoutRateLimiter, async (req, res) => {
+  try {
+    const { 
+      items, 
+      customerName, 
+      phone, 
+      address, 
+      deliveryZone, 
+      paymentMethod, 
+      senderPhone, 
+      trxId, 
+      couponCode,
+      deliveryMethodId,
+      deliveryCharge,
+      deliveryFee: reqDeliveryFee,
+      memberDiscount,
+      pointsDiscount
+    } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Order must contain at least one item.' });
+    }
+
+    // Server-Side Strict Customer Details Validation (Anti-Spam & Courier Delivery Shield)
+    const validation = validateOrderCustomerDetails({
+      customerName: customerName || req.body.name,
+      phone,
+      address
+    });
+
+    if (!validation.isValid) {
+      return res.status(400).json({ 
+        error: validation.errors[0],
+        errors: validation.errors 
+      });
+    }
+
+    const cleanCustomerName = validation.sanitized.name;
+    const cleanPhone = validation.sanitized.phone;
+    const cleanAddress = validation.sanitized.address;
+
+    // Idempotency check to prevent duplicate orders & double stock deduction on fast double-clicks
+    const checkoutIdempotencyKey = (req.headers['x-idempotency-key'] as string) || 
+      `${cleanPhone}_${(items || []).map((i: any) => `${i.productId || i.id}:${i.quantity}`).sort().join(',')}`;
+
+    const existingIdempotent = orderIdempotencyMap.get(checkoutIdempotencyKey);
+    if (existingIdempotent && (Date.now() - existingIdempotent.timestamp < 30_000)) {
+      return res.status(200).json({
+        success: true,
+        order: existingIdempotent.order,
+        idempotent: true
+      });
+    }
+
+    // 1. Authoritative Server-Side Stock & Price Verification (Indexed O(1) Map - Zero N+1 queries)
+    let calculatedSubtotal = 0;
+    const validatedItems: any[] = [];
+    const productLookupMap = new Map(storeProducts.map(p => [p.id, p]));
+
+    for (const item of items) {
+      const productId = item.productId || item.product?.id || item.id;
+      const quantity = Math.max(1, parseInt(item.quantity || 1, 10));
+
+      const matchedProduct = productLookupMap.get(productId);
+      const unitPrice = matchedProduct ? Number(matchedProduct.price || 0) : Number(item.price || item.product?.price || 0);
+      const regularPrice = matchedProduct ? Number(matchedProduct.regularPrice || unitPrice) : Number(item.regularPrice || unitPrice);
+      const title = matchedProduct?.title || item.product?.title || item.title || 'Product';
+
+      // Stock check
+      const currentStock = matchedProduct ? (typeof matchedProduct.stock === 'number' ? matchedProduct.stock : (matchedProduct as any).stockQuantity) : undefined;
+      const canContinueSelling = matchedProduct?.continueSelling === true;
+
+      if (matchedProduct && typeof currentStock === 'number') {
+        if (currentStock < quantity && !canContinueSelling) {
+          return res.status(400).json({
+            error: `Insufficient stock for product "${title}". Available: ${currentStock}`
+          });
+        }
+        // Deduct inventory atomically on server
+        if (typeof matchedProduct.stock === 'number') {
+          matchedProduct.stock = Math.max(0, matchedProduct.stock - quantity);
+        } else if (typeof (matchedProduct as any).stockQuantity === 'number') {
+          (matchedProduct as any).stockQuantity = Math.max(0, (matchedProduct as any).stockQuantity - quantity);
+        }
+        matchedProduct.soldStock = (matchedProduct.soldStock || 0) + quantity;
+
+        // Deduct variant stock if variant is selected
+        if (item.variant && Array.isArray(matchedProduct.variants)) {
+          const varMatch = matchedProduct.variants.find((v: any) => 
+            v.id === item.variant || 
+            v.name === item.variant ||
+            (v.attributes && Object.values(v.attributes).includes(item.variant))
+          );
+          if (varMatch && typeof varMatch.stock === 'number') {
+            varMatch.stock = Math.max(0, varMatch.stock - quantity);
+          }
+        }
+      }
+
+      calculatedSubtotal += unitPrice * quantity;
+      validatedItems.push({
+        product: {
+          id: productId,
+          title,
+          price: unitPrice,
+          regularPrice,
+          image: matchedProduct?.coverImage || item.product?.image || item.product?.coverImage || '',
+          category: matchedProduct?.category || item.product?.category || '',
+          stock: matchedProduct?.stockQuantity || 100,
+          isAvailable: true
+        },
+        quantity
+      });
+    }
+
+    // 2. Authoritative Delivery Charge Calculation based on real Admin Settings
+    let deliveryFee = 0;
+    const configuredMethods = Array.isArray(storeSettings?.deliveryMethods)
+      ? storeSettings.deliveryMethods.filter(m => m.status === 'Active')
+      : [];
+
+    if (configuredMethods.length > 0) {
+      // Find matching method configured in Admin Panel
+      const matchedMethod = configuredMethods.find(m => 
+        (deliveryMethodId && m.id === deliveryMethodId) ||
+        (deliveryZone && m.id === deliveryZone) ||
+        (deliveryZone && m.title?.toLowerCase() === String(deliveryZone).toLowerCase()) ||
+        (deliveryZone && String(deliveryZone).toLowerCase().includes(m.title?.toLowerCase() || ''))
+      ) || configuredMethods[0];
+
+      if (matchedMethod) {
+        deliveryFee = Number(matchedMethod.baseCharge ?? (matchedMethod as any).charge ?? 0);
+      }
+    } else if (typeof deliveryCharge === 'number') {
+      deliveryFee = Math.max(0, deliveryCharge);
+    } else if (typeof reqDeliveryFee === 'number') {
+      deliveryFee = Math.max(0, reqDeliveryFee);
+    } else {
+      deliveryFee = 0;
+    }
+
+    // 3. Authoritative Coupon Verification
+    let couponDiscount = 0;
+    if (couponCode && typeof couponCode === 'string') {
+      const cleanCoupon = couponCode.trim().toUpperCase();
+      if (cleanCoupon === 'WELCOME10' || cleanCoupon === 'SAVE10') {
+        couponDiscount = Math.round(calculatedSubtotal * 0.10);
+      } else if (cleanCoupon === 'FLAT50') {
+        couponDiscount = 50;
+      }
+    }
+
+    const memberDisc = Number(memberDiscount || req.body.memberDiscountAmount || 0);
+    const pointsDisc = Number(pointsDiscount || req.body.pointsRedeemedTaka || 0);
+    const calculatedGrandTotal = Math.max(0, calculatedSubtotal + deliveryFee - couponDiscount - memberDisc - pointsDisc);
+    const orderId = `ORD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const shardIndex = shardService.getShardIndex(orderId);
+    const timePartition = shardService.getTimePartitionName('orders');
+
+    const confirmedOrder: BookOrder & { _shardMeta?: { shardIndex: number; partition: string } } = {
+      id: orderId,
+      customerName: cleanCustomerName,
+      name: cleanCustomerName,
+      phone: cleanPhone,
+      address: cleanAddress,
+      deliveryZone: deliveryZone || (configuredMethods.length > 0 ? configuredMethods[0].title : 'Standard Delivery'),
+      deliveryFee,
+      deliveryCharge: deliveryFee,
+      memberDiscount: memberDisc > 0 ? memberDisc : undefined,
+      pointsRedeemed: pointsDisc > 0 ? pointsDisc : undefined,
+
+      items: validatedItems,
+      quantity: validatedItems.reduce((sum, i) => sum + i.quantity, 0),
+      totalPrice: calculatedGrandTotal,
+      totalAmount: calculatedGrandTotal,
+      productName: validatedItems.map(i => `${i.product.title} (x${i.quantity})`).join(', '),
+      productTitle: validatedItems.map(i => `${i.product.title} (x${i.quantity})`).join(', '),
+      status: 'Pending',
+      orderType: 'storefront',
+      paymentMethod: paymentMethod || 'Cash on Delivery',
+      paymentGateway: paymentMethod || 'Cash on Delivery',
+      senderPhone: senderPhone ? String(senderPhone).trim() : undefined,
+      trxId: trxId ? String(trxId).trim() : undefined,
+      couponCode: couponCode ? String(couponCode).trim() : undefined,
+      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      createdAt: new Date().toISOString(),
+      orderDate: new Date().toISOString(),
+      _shardMeta: {
+        shardIndex,
+        partition: timePartition
+      }
+    };
+
+    // Save order (deduplicate by id if already exists)
+    const existingIdx = storeOrders.findIndex(o => o.id === confirmedOrder.id);
+    if (existingIdx === -1) {
+      storeOrders.unshift(confirmedOrder);
+    } else {
+      storeOrders[existingIdx] = confirmedOrder;
+    }
+    saveOrdersToDisk(storeOrders);
+    saveProductsToDisk(storeProducts);
+    orderIdempotencyMap.set(checkoutIdempotencyKey, { order: confirmedOrder, timestamp: Date.now() });
+    syncSelfRecoveredCart(confirmedOrder.phone, confirmedOrder.id, confirmedOrder.totalPrice);
+    shardService.incrementCounter('orders_total', 1);
+    globalCache.invalidateTag('orders');
+    globalCache.invalidateTag('products');
+    redundancyService.saveSnapshot('recent_orders_backup', storeOrders.slice(0, 100));
+
+    // Dispatch Server-Side Meta CAPI Purchase event asynchronously
+    try {
+      const forwardedFor = req.header('cf-connecting-ip') || req.header('x-forwarded-for');
+      const clientIpAddress = (req.header('cf-connecting-ip') || forwardedFor?.split(',')[0] || req.ip || req.socket.remoteAddress || '').trim();
+      const rawCookies = req.headers.cookie || '';
+      const fbpMatch = rawCookies.match(/_fbp=([^;]+)/);
+      const fbcMatch = rawCookies.match(/_fbc=([^;]+)/);
+      const testCodeCookie = rawCookies.match(/meta_test_code=([^;]+)/);
+      const testEventCode = (
+        req.body?.testEventCode ||
+        req.query?.test_event_code as string ||
+        req.query?.test_code as string ||
+        testCodeCookie?.[1] ||
+        ''
+      ).trim();
+
+      FacebookCapiService.sendEvent('Purchase', {
+        eventId: confirmedOrder.id,
+        eventSourceUrl: req.header('referer') || `${req.protocol}://${req.get('host') || 'store.com'}/checkout`,
+        userAgent: req.header('user-agent'),
+        testEventCode: testEventCode || undefined,
+        customData: {
+          value: confirmedOrder.totalPrice,
+          currency: 'BDT',
+          order_id: confirmedOrder.id,
+          content_type: 'product',
+          num_items: confirmedOrder.quantity,
+          contents: confirmedOrder.items?.map(it => ({
+            id: it.product?.id || it.productId || 'item',
+            title: it.product?.title || it.productTitle,
+            quantity: it.quantity,
+            item_price: it.price || it.product?.price
+          }))
+        }
+      }, {
+        phone: confirmedOrder.phone,
+        name: confirmedOrder.customerName,
+        district: confirmedOrder.district,
+        clientIpAddress,
+        fbp: fbpMatch?.[1],
+        fbc: fbcMatch?.[1]
+      }).catch(err => console.warn('[Meta CAPI] Checkout dispatch notice:', err?.message || err));
+    } catch (capiErr) {
+      console.warn('[Meta CAPI] Background dispatch error:', capiErr);
+    }
+
+    return res.status(201).json({
+      success: true,
+      order: confirmedOrder
+    });
+  } catch (error: any) {
+    console.error('Checkout error:', error);
+    return res.status(500).json({ error: 'Server error during checkout validation.' });
+  }
+});
+
+// POST Create Order - with sharded partitioning & distributed counter
+orderRouter.post('/', checkoutRateLimiter, (req, res) => {
+  // Validate customer details to block dummy/fake orders
+  if (req.body.customerName || req.body.name || req.body.phone || req.body.address) {
+    const val = validateOrderCustomerDetails({
+      customerName: req.body.customerName || req.body.name,
+      phone: req.body.phone,
+      address: req.body.address
+    });
+    if (!val.isValid) {
+      return res.status(400).json({ error: val.errors[0], errors: val.errors });
+    }
+    req.body.customerName = val.sanitized.name;
+    req.body.name = val.sanitized.name;
+    req.body.phone = val.sanitized.phone;
+    req.body.address = val.sanitized.address;
+  }
+
+  const directIdempotencyKey = (req.headers['x-idempotency-key'] as string) || 
+    `${req.body.phone || 'anon'}_${req.body.productName || req.body.productTitle || ''}_${req.body.totalPrice || req.body.totalAmount || ''}`;
+
+  const existingIdempotent = orderIdempotencyMap.get(directIdempotencyKey);
+  if (existingIdempotent && (Date.now() - existingIdempotent.timestamp < 30_000)) {
+    return res.status(200).json(existingIdempotent.order);
+  }
+
+  const orderId = req.body.id || `ORD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const shardIndex = shardService.getShardIndex(orderId);
+  const timePartition = shardService.getTimePartitionName('orders');
+
+  const existingIndex = storeOrders.findIndex(o => o.id === orderId);
+  if (existingIndex !== -1) {
+    storeOrders[existingIndex] = {
+      ...storeOrders[existingIndex],
+      ...req.body,
+      id: orderId
+    };
+    saveOrdersToDisk(storeOrders);
+    globalCache.invalidateTag('orders');
+    return res.status(200).json(storeOrders[existingIndex]);
+  }
+
+  const newOrder: BookOrder & { _shardMeta?: { shardIndex: number; partition: string } } = {
+    id: orderId,
+    createdAt: new Date().toISOString(),
+    status: 'Pending',
+    _shardMeta: {
+      shardIndex,
+      partition: timePartition
+    },
+    ...req.body
+  };
+
+  storeOrders.unshift(newOrder);
+  saveOrdersToDisk(storeOrders);
+
+  // Deduct inventory for items in manual or direct order
+  if (Array.isArray(newOrder.items) && newOrder.items.length > 0) {
+    newOrder.items.forEach((it: any) => {
+      const pId = it.product?.id || it.productId;
+      const qty = Number(it.quantity) || 1;
+      const matched = storeProducts.find(p => p.id === pId);
+      if (matched) {
+        if (typeof matched.stock === 'number') {
+          matched.stock = Math.max(0, matched.stock - qty);
+        } else if (typeof (matched as any).stockQuantity === 'number') {
+          (matched as any).stockQuantity = Math.max(0, (matched as any).stockQuantity - qty);
+        }
+        matched.soldStock = (matched.soldStock || 0) + qty;
+        if (it.variant && Array.isArray(matched.variants)) {
+          const vMatch = matched.variants.find((v: any) => v.id === it.variant || v.name === it.variant || (v.attributes && Object.values(v.attributes).includes(it.variant)));
+          if (vMatch && typeof vMatch.stock === 'number') {
+            vMatch.stock = Math.max(0, vMatch.stock - qty);
+          }
+        }
+      }
+    });
+    saveProductsToDisk(storeProducts);
+    globalCache.invalidateTag('products');
+  }
+
+  if (newOrder.phone) {
+    syncSelfRecoveredCart(newOrder.phone, newOrder.id, newOrder.price);
+  }
+
+  // Increment distributed sharded order counter
+  shardService.incrementCounter('orders_total', 1);
+
+  // Invalidate order caches
+  globalCache.invalidateTag('orders');
+
+  // Redundancy snapshot
+  redundancyService.saveSnapshot('recent_orders_backup', storeOrders.slice(0, 100));
+
+  orderIdempotencyMap.set(directIdempotencyKey, { order: newOrder, timestamp: Date.now() });
+
+  res.status(201).json(newOrder);
+});
+
+// PUT Update Order - Requires Admin Privileges
+orderRouter.put('/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const index = storeOrders.findIndex(o => o.id === id);
+  if (index !== -1) {
+    storeOrders[index] = { ...storeOrders[index], ...req.body };
+    saveOrdersToDisk(storeOrders);
+
+    // Invalidate order caches
+    globalCache.invalidateTag('orders');
+
+    res.json(storeOrders[index]);
+  } else {
+    res.status(404).json({ error: "Order not found" });
+  }
+});
+
+// DELETE Order
+orderRouter.delete('/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const index = storeOrders.findIndex(o => o.id === id);
+  if (index !== -1) {
+    const orderToDelete = storeOrders[index];
+
+    // Restore inventory when order is deleted
+    if (orderToDelete && Array.isArray(orderToDelete.items)) {
+      orderToDelete.items.forEach((it: any) => {
+        const pId = it.product?.id || it.productId;
+        const qty = Number(it.quantity) || 1;
+        const matched = storeProducts.find(p => p.id === pId);
+        if (matched) {
+          if (typeof matched.stock === 'number') {
+            matched.stock += qty;
+          } else if (typeof (matched as any).stockQuantity === 'number') {
+            (matched as any).stockQuantity += qty;
+          }
+          if (typeof matched.soldStock === 'number') {
+            matched.soldStock = Math.max(0, matched.soldStock - qty);
+          }
+          if (it.variant && Array.isArray(matched.variants)) {
+            const vMatch = matched.variants.find((v: any) => v.id === it.variant || v.name === it.variant || (v.attributes && Object.values(v.attributes).includes(it.variant)));
+            if (vMatch && typeof vMatch.stock === 'number') {
+              vMatch.stock += qty;
+            }
+          }
+        }
+      });
+      saveProductsToDisk(storeProducts);
+      globalCache.invalidateTag('products');
+    }
+
+    storeOrders.splice(index, 1);
+    saveOrdersToDisk(storeOrders);
+
+    // If this order was recovered or converted from an abandoned cart, revert the cart back to pending
+    revertAbandonedCartOnOrderDelete(id);
+
+    // Invalidate order caches
+    globalCache.invalidateTag('orders');
+
+    res.json({ success: true, id });
+  } else {
+    res.status(404).json({ error: "Order not found" });
+  }
+});
