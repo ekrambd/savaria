@@ -270,6 +270,15 @@ facebookRouter.post('/capi', async (req, res) => {
     res.status(400).json({ success: false, message: 'eventName, eventId, and eventSourceUrl are required' });
     return;
   }
+  const pixelId = (process.env.META_PIXEL_ID || process.env.VITE_META_PIXEL_ID || '').trim();
+  const metaApiToken = (process.env.META_CAPI_TOKEN || process.env.META_ACCESS_TOKEN || '').trim();
+
+  // If CAPI token or Pixel is not configured on the server, return 200 silent skip (avoids 503 red console errors)
+  if (!pixelId || !metaApiToken) {
+    res.status(200).json({ success: true, skipped: true, message: 'Meta CAPI not configured with META_CAPI_TOKEN, browser pixel handles tracking' });
+    return;
+  }
+
   const forwardedFor = req.header('cf-connecting-ip') || req.header('x-forwarded-for');
   const clientIpAddress = (req.header('cf-connecting-ip') || forwardedFor?.split(',')[0] || req.ip || req.socket.remoteAddress || '').trim();
 
@@ -304,11 +313,11 @@ facebookRouter.post('/capi', async (req, res) => {
         testEventCode: resolvedTestCode || undefined
       }, enrichedUserData);
     }, async () => {
-      return { success: false, status: 503, message: 'Meta CAPI circuit breaker is open (fast-fallback)' };
+      return { success: false, status: 200, skipped: true, message: 'Meta CAPI circuit breaker is open (fast-fallback)' };
     });
 
-    res.status(result.success ? 200 : (result.status || 502)).json(result);
+    res.status(result.success ? 200 : 200).json(result);
   } catch (err: any) {
-    res.status(502).json({ success: false, message: err?.message || 'Meta CAPI failed' });
+    res.status(200).json({ success: false, skipped: true, message: err?.message || 'Meta CAPI fallback' });
   }
 });

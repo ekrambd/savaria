@@ -113,6 +113,49 @@ orderRouter.get('/track', (req, res) => {
   });
 });
 
+// GET /api/orders/public-recent - Real Sales Proof for Social Notifications (Masked customer data)
+orderRouter.get('/public-recent', (_req, res) => {
+  try {
+    const recent = storeOrders
+      .filter(o => o && o.status !== 'cancelled')
+      .slice(-15)
+      .reverse()
+      .map(o => {
+        // Mask customer name (e.g. "Rakibul Hasan" -> "রাকিব **" or "Rakib H.")
+        const fullName = (o.customerName || o.name || 'Customer').trim();
+        const firstName = fullName.split(' ')[0] || 'Customer';
+        const maskedName = firstName;
+
+        // Extract city from district or address
+        const city = o.customerDistrict || o.district || (o.address && o.address.includes('ঢাকা') ? 'ঢাকা' : 'বাংলাদেশ');
+
+        const firstItem = (o.items && o.items[0]) || {};
+        const title = firstItem.productTitle || firstItem.title || 'বই/পণ্য';
+        const image = firstItem.productImage || firstItem.image || '';
+
+        // Calculate minutes ago
+        const orderTime = o.createdAt ? new Date(o.createdAt).getTime() : Date.now();
+        const diffMinutes = Math.max(1, Math.round((Date.now() - orderTime) / 60000));
+
+        return {
+          id: o.id,
+          buyer: maskedName,
+          city: city,
+          productTitle: title,
+          productImage: image,
+          minutesAgo: diffMinutes > 1440 ? `${Math.round(diffMinutes / 1440)} দিন` : `${diffMinutes} মিনিট`
+        };
+      });
+
+    res.json({
+      success: true,
+      orders: recent
+    });
+  } catch (err: any) {
+    res.json({ success: true, orders: [] });
+  }
+});
+
 // GET Sharding & Partition info for Orders
 orderRouter.get('/shards/stats', (_req, res) => {
   const counterStats = shardService.getCounterStats('orders_total');

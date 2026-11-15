@@ -68,49 +68,59 @@ export const RecentSalesNotification: React.FC<RecentSalesNotificationProps> = (
     city: string;
     productTitle: string;
     productImage: string;
-    minutesAgo: number;
+    minutesAgo: string | number;
   } | null>(null);
 
   useEffect(() => {
-    if (!products || products.length === 0) return;
-
     let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
 
-    const triggerNotification = () => {
-      const randomProduct = products[Math.floor(Math.random() * products.length)];
-      const randomBuyer = BUYER_NAMES[Math.floor(Math.random() * BUYER_NAMES.length)];
-      const randomCity = CITIES[Math.floor(Math.random() * CITIES.length)];
-      const randomMins = TIME_MINUTES[Math.floor(Math.random() * TIME_MINUTES.length)];
+    // Fetch REAL orders from backend API
+    const checkRealOrders = async () => {
+      try {
+        const res = await fetch('/api/orders/public-recent');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders) && data.orders.length > 0) {
+          // Pick a real recent order
+          const randomOrder = data.orders[Math.floor(Math.random() * data.orders.length)];
+          if (randomOrder && randomOrder.productTitle) {
+            // Find product image if missing
+            const matchedProduct = products.find(p => p.title === randomOrder.productTitle || p.id === randomOrder.productId);
+            const fallbackImg = matchedProduct?.coverImage || matchedProduct?.image || '/favicon/favicon-32x32.png';
 
-      setCurrentSale({
-        buyer: randomBuyer,
-        city: randomCity,
-        productTitle: randomProduct.title,
-        productImage: randomProduct.coverImage || randomProduct.image || '/images/meghbristi-brand-logo.svg',
-        minutesAgo: randomMins
-      });
-      setIsVisible(true);
+            setCurrentSale({
+              buyer: randomOrder.buyer || 'সম্মানিত গ্রাহক',
+              city: randomOrder.city || 'বাংলাদেশ',
+              productTitle: randomOrder.productTitle,
+              productImage: randomOrder.productImage || fallbackImg,
+              minutesAgo: randomOrder.minutesAgo || 'অল্প কিছুক্ষণ'
+            });
+            setIsVisible(true);
 
-      // Play soft notification tone
-      playNotificationChime();
+            // Play notification chime
+            playNotificationChime();
 
-      // Hide after 6 seconds
-      setTimeout(() => {
-        setIsVisible(false);
-      }, 6000);
+            // Auto hide after 6 seconds
+            setTimeout(() => {
+              setIsVisible(false);
+            }, 6000);
+          }
+        }
+      } catch {
+        // Silently skip if no real orders
+      }
     };
 
-    // First trigger after 7 seconds, then recurring every 24-38 seconds
+    // First check after 10s, then repeat every 35s
     timeoutId = setTimeout(() => {
-      triggerNotification();
-      const interval = setInterval(() => {
-        triggerNotification();
-      }, 28000);
+      checkRealOrders();
+      intervalId = setInterval(checkRealOrders, 35000);
+    }, 10000);
 
-      return () => clearInterval(interval);
-    }, 7000);
-
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
   }, [products]);
 
   if (!isVisible || !currentSale) return null;

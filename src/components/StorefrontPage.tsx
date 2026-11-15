@@ -3176,54 +3176,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           </div>
 
           {/* ============================================================
-              FULL-WIDTH DETAILS SECTION: DESCRIPTION, SPECIFICATIONS & FEATURES
+              FULL-WIDTH DETAILS SECTION: SPECIFICATIONS & FEATURES (If Available)
               ============================================================ */}
-          <div className="mt-12 sm:mt-16 pt-10 border-t border-slate-200 space-y-12 sm:space-y-16">
-            
-            {/* 1. PRODUCT DESCRIPTION (Clean, Formatted & Separated) */}
-            {activeProductDetail.description && (
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center sm:text-left mb-6">
-                  <span className="text-xs uppercase tracking-wider font-bold text-[#2563eb] bg-green-50 border border-green-200 px-3 py-1 rounded-full">
-                    Product Description
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-2 flex items-center justify-center sm:justify-start gap-2">
-                    <Sparkles className="w-5 h-5 text-sky-600" />
-                    Product Description & Features
-                  </h2>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs">
-                  {/<[a-z][\s\S]*>/i.test(activeProductDetail.description) ? (
-                    <div 
-                      className="prose prose-slate max-w-none text-sm sm:text-base leading-relaxed space-y-4"
-                      dangerouslySetInnerHTML={{ __html: activeProductDetail.description }}
-                    />
-                  ) : (
-                    <div className="space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line">
-                      {activeProductDetail.description.split('\n\n').filter(Boolean).map((para, pIdx) => {
-                        const trimmed = para.trim();
-                        if (trimmed.startsWith('http') && (trimmed.endsWith('.jpg') || trimmed.endsWith('.png') || trimmed.endsWith('.webp') || trimmed.includes('/uploads/'))) {
-                          return (
-                            <div key={pIdx} className="my-4 rounded-xl overflow-hidden border border-slate-200 shadow-xs flex justify-center">
-                              <img src={trimmed} alt="Product Detail" className="max-w-full h-auto object-contain" />
-                            </div>
-                          );
-                        }
-                        return (
-                          <p key={pIdx} className="text-slate-700">
-                            {para}
-                          </p>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 2. PRODUCT SPECIFICATIONS TABLE (Only shown if custom specs are configured) */}
-            {((activeProductDetail as any).specTable?.length > 0) && (
+          {((activeProductDetail as any).specTable?.length > 0) && (
+            <div className="mt-12 sm:mt-16 pt-10 border-t border-slate-200 space-y-12 sm:space-y-16">
               <div className="max-w-4xl mx-auto">
                 <div className="text-center sm:text-left mb-6">
                   <span className="text-xs uppercase tracking-wider font-bold text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
@@ -3233,10 +3189,27 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     <Sparkles className="w-5 h-5 text-sky-600" />
                     Product Specifications
                   </h2>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                    Meghbristi Fashion premium collection specifications & fabric care guide
-                  </p>
                 </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+                  <table className="w-full text-xs sm:text-sm text-left">
+                    <tbody className="divide-y divide-slate-100">
+                      {((activeProductDetail as any).specTable || []).map((row: any, rIdx: number) => (
+                        <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}>
+                          <td className="py-3 px-4 font-bold text-slate-700 w-1/3">
+                            {row.label || row.name || row.key}
+                          </td>
+                          <td className="py-3 px-4 text-slate-600">
+                            {row.details || row.value}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
                 <div className="overflow-hidden rounded-xl border border-slate-200 shadow-xs bg-white">
                   <table className="w-full text-left border-collapse text-xs sm:text-sm">

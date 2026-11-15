@@ -115,8 +115,13 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
     }
   };
 
-  // Secure URL with toolbar=0, navpanes=0 to block native download/print toolbars
-  const protectedPdfUrl = pdfUrl ? `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH` : '';
+  // Resolve PDF Viewer URL
+  // If remote URL, render via Google Docs PDF Viewer to prevent CORS / blank canvas blocks
+  // If local / relative URL, render native embedded
+  const isRemotePdf = pdfUrl && (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://'));
+  const viewerUrl = isRemotePdf
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`
+    : (pdfUrl ? `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH` : '');
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950/90 backdrop-blur-md select-none animate-in fade-in duration-200">
@@ -281,7 +286,7 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
         ) : (
           <div className="w-full max-w-4xl h-full flex flex-col items-center justify-center my-auto rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-white relative">
             <iframe
-              src={protectedPdfUrl}
+              src={viewerUrl}
               className="w-full h-full border-none"
               title="Protected PDF Preview"
               onLoad={() => setIsLoading(false)}
