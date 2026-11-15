@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const LIVE_DOMAIN = 'https://meghbristi.com.bd';
+const LIVE_DOMAIN = 'https://savariabd.com';
 const PRODUCTS_FILE = path.join(process.cwd(), 'prisma', 'products.json');
 const SETTINGS_FILE = path.join(process.cwd(), 'prisma', 'settings.json');
 const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');

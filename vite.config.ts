@@ -13,10 +13,19 @@ export default defineConfig(() => {
       },
     },
     server: {
+      allowedHosts: true,
+      proxy: {
+        // Direct Live DB mode when VITE_USE_LIVE_API=true
+        ...(process.env.VITE_USE_LIVE_API === 'true' ? {
+          '/api': {
+            target: 'https://savariabd.com',
+            changeOrigin: true,
+            secure: false
+          }
+        } : {})
+      },
       // HMR is disabledd in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      
-      allowedHosts: true,
       
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
