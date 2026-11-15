@@ -46,6 +46,9 @@ const AboutUsPage = React.lazy(() => import('./AboutUsPage'));
 const StoreFooter = React.lazy(() => import('./StoreFooter'));
 const AddressModal = React.lazy(() => import('./AddressModal'));
 const CustomerOrdersView = React.lazy(() => import('./CustomerOrdersView'));
+const PdfSampleReader = React.lazy(() => import('./PdfSampleReader').then(m => ({ default: m.PdfSampleReader })));
+const FastCheckoutDrawer = React.lazy(() => import('./FastCheckoutDrawer').then(m => ({ default: m.FastCheckoutDrawer })));
+const RecentSalesNotification = React.lazy(() => import('./RecentSalesNotification').then(m => ({ default: m.RecentSalesNotification })));
 
 interface StorefrontPageProps {
   onGoToLogin?: () => void;
@@ -655,6 +658,8 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
   const [activeVariant, setActiveVariant] = useState<any>(null);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState<boolean>(false);
+  const [isPdfReaderOpen, setIsPdfReaderOpen] = useState<boolean>(false);
+  const [isFastCheckoutOpen, setIsFastCheckoutOpen] = useState<boolean>(false);
   const [isHoverZooming, setIsHoverZooming] = useState<boolean>(false);
   const [zoomPos, setZoomPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [detailQuantity, setDetailQuantity] = useState<number>(1);
@@ -1179,6 +1184,21 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
     return () => clearInterval(interval);
   }, [isSliderPaused, activeHeroBanners.length, activeSlideIndex, activeHeroBanners, ecomSettings?.heroSliderInterval, ecomSettings?.heroVideoInterval]);
 
+  // Track Meta BannerView for the active hero banner (like Wafilife promotion impressions)
+  useEffect(() => {
+    if (activeHeroBanners.length > 0 && activeNav === 'home') {
+      const banner = activeHeroBanners[activeSlideIndex];
+      if (banner) {
+        trackEvent('BannerView', {
+          promotion_id: banner.id || `banner_${activeSlideIndex}`,
+          promotion_name: banner.title || `Hero Banner ${activeSlideIndex + 1}`,
+          creative_name: banner.imageUrl || banner.videoUrl || 'hero_banner',
+          slide_index: activeSlideIndex
+        });
+      }
+    }
+  }, [activeSlideIndex, activeHeroBanners, activeNav]);
+
   const handleVideoEnded = useCallback(() => {
     if (activeHeroBanners.length > 1) {
       setActiveSlideIndex(prev => (prev + 1) % activeHeroBanners.length);
@@ -1516,6 +1536,17 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
         window.location.href
       );
       updateProductSchema(null, window.location.href, displayStoreName);
+
+      // Track ViewCategory (like Wafilife / Top eCommerce)
+      if (selectedCategoryCheckbox && selectedCategoryCheckbox !== 'All') {
+        const catEventId = createEventId('cat_view');
+        trackEvent('ViewCategory', {
+          content_name: selectedCategoryCheckbox,
+          content_category: selectedCategoryCheckbox,
+          subcategory: selectedSubcategory !== 'All' ? selectedSubcategory : undefined,
+          content_type: 'product_group'
+        }, catEventId);
+      }
     } else if (activeNav === 'about') {
       updateMetaTags(
         aboutSettings?.pageTitle || `About Us | ${displayStoreName}`,
@@ -2632,9 +2663,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
         </div>
 
         {/* MARK 2: SUB-HEADER NAVIGATION BAR (Soft Brand Forest Green) */}
-        <nav className="w-full bg-[#1b4332] text-white select-none border-t border-emerald-900/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2 text-xs sm:text-sm font-semibold whitespace-nowrap">
+        <nav className="w-full bg-[#1b4332] text-white select-none border-t border-emerald-900/40 relative z-30 overflow-visible">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-visible">
+            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 overflow-visible py-2 text-xs sm:text-sm font-semibold flex-wrap">
               
               <button
                 type="button"
@@ -2700,8 +2731,8 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     </button>
 
                     {hasSubs && (
-                      <div className="absolute top-full left-0 pt-1.5 opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-150 z-50">
-                        <div className="w-52 bg-white text-slate-800 rounded-lg shadow-2xl border border-slate-200 py-1.5 divide-y divide-slate-100 font-normal">
+                      <div className="absolute top-full left-0 pt-2 opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-150 z-[100] min-w-[200px]">
+                        <div className="w-56 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 py-1.5 divide-y divide-slate-100 font-normal">
                           {subs.map((sub: any) => (
                             <button
                               key={sub.id || sub.name}
@@ -2711,10 +2742,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                                 setSelectedSubcategory(sub.name);
                                 navigateTo('shop');
                               }}
-                              className="w-full text-left px-4 py-2 text-xs hover:bg-green-50 hover:text-[#2563eb] transition-colors flex items-center justify-between cursor-pointer"
+                              className="w-full text-left px-4 py-2.5 text-xs hover:bg-blue-50 hover:text-[#2563eb] transition-colors flex items-center justify-between cursor-pointer font-medium"
                             >
                               <span>{sub.name}</span>
-                              <span className="text-[10px] text-slate-300">→</span>
+                              <span className="text-[10px] text-slate-400">→</span>
                             </button>
                           ))}
                         </div>
@@ -2871,22 +2902,15 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 </button>
               </div>
 
-              {/* PDF Sample Reader Button (Matching Reference Image) */}
+              {/* PDF Sample Reader Button (High-Speed Protected Reading Viewer) */}
               {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0)) && (
                 <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (activeProductDetail.samplePdfUrl) {
-                        window.open(activeProductDetail.samplePdfUrl, '_blank');
-                      } else if (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) {
-                        setZoomModalImage(activeProductDetail.samplePages[0]);
-                        setIsZoomModalOpen(true);
-                      }
-                    }}
-                    className="w-full py-3 px-4 bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm sm:text-base rounded-xl transition shadow-md active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => setIsPdfReaderOpen(true)}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065f46] text-white font-extrabold text-sm sm:text-base rounded-xl transition shadow-lg hover:shadow-xl active:scale-98 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30"
                   >
-                    <BookOpen className="w-5 h-5 text-white" />
+                    <BookOpen className="w-5 h-5 text-white animate-pulse" />
                     <span>পিডিএফ স্যাম্পল পড়ে দেখুন</span>
                   </button>
                 </div>
@@ -3074,11 +3098,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 {/* Button 1 (Top Left): ⚡ Order Now */}
                 <button 
                   type="button"
-                  onClick={() => {
-                    handleAddToCart(activeProductDetail, detailQuantity, activeVariant);
-                    setIsCartOpen(false);
-                    navigateTo('checkout');
-                  }}
+                  onClick={() => setIsFastCheckoutOpen(true)}
                   className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3 px-4 rounded-lg text-sm sm:text-base shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Zap className="w-4 h-4 fill-current shrink-0" />
@@ -3348,6 +3368,22 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               </div>
             </div>
           )}
+
+          {/* Mobile Floating Sticky "Order Now" Fast Checkout Bar */}
+          <div className="sm:hidden fixed bottom-14 inset-x-0 z-40 bg-white/95 backdrop-blur-md p-2.5 border-t border-slate-200/90 shadow-2xl flex items-center gap-2">
+            <div className="flex-1 min-w-0 pl-1">
+              <p className="text-[10px] text-slate-500 font-medium">ক্যাশ অন ডেলিভারি</p>
+              <p className="text-sm font-black text-[#2563eb]">Tk. {activeVariant?.price || activeProductDetail.price}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsFastCheckoutOpen(true)}
+              className="flex-1 py-2.5 px-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>সরাসরি অর্ডার করুন</span>
+            </button>
+          </div>
         </div>
         )
       )}
@@ -4412,6 +4448,8 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             onNavigateHome={() => navigateTo('home')}
             onNavigateShop={() => navigateTo('shop')}
             onOpenLoginModal={onGoToLogin}
+            selectedCustomerAddress={selectedCustomerAddress}
+            onOpenAddressModal={() => setIsAddressModalOpen(true)}
           />
         </React.Suspense>
       )}
@@ -4693,6 +4731,15 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           <button
                             type="button"
                             onClick={() => {
+                              // Track BannerClick
+                              trackEvent('BannerClick', {
+                                promotion_id: banner.id || `banner_${index}`,
+                                promotion_name: banner.title || `Hero Banner ${index + 1}`,
+                                creative_name: banner.imageUrl || 'banner_creative',
+                                action_type: banner.actionType || 'link',
+                                destination: banner.link || banner.productId
+                              });
+
                               if (banner.actionType === 'product' && banner.productId) {
                                 const found = products.find(p => p.id === banner.productId);
                                 if (found) {
@@ -5513,7 +5560,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                     Your cart
                   </h3>
                   {totalCartCount > 0 && (
-                    <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-purple-100 text-[#7c3aed]">
+                    <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-[#2563eb]">
                       {totalCartCount} {totalCartCount === 1 ? 'item' : 'items'}
                     </span>
                   )}
@@ -5526,6 +5573,38 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Dynamic Free Shipping Progress Bar (Admin Configurable) */}
+              {(() => {
+                const threshold = Number(ecomSettings?.freeDeliveryMinPurchase ?? 3000);
+                const isFree = cartSubtotal >= threshold;
+                const progressPct = Math.min(100, Math.round((cartSubtotal / threshold) * 100));
+                const remaining = Math.max(0, threshold - cartSubtotal);
+
+                return (
+                  <div className="px-6 py-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border-b border-blue-100">
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      {isFree ? (
+                        <span className="font-bold text-emerald-700 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          অভিনন্দন! আপনি ফ্রি ডেলিভারি পাচ্ছেন 🎉
+                        </span>
+                      ) : (
+                        <span className="text-slate-700 font-medium">
+                          আর মাত্র <strong className="text-[#2563eb] font-bold">Tk. {remaining}</strong> টাকার পণ্য যোগ করলেই <strong className="text-emerald-700">ফ্রি ডেলিভারি!</strong>
+                        </span>
+                      )}
+                      <span className="font-mono text-[11px] font-bold text-slate-500">{progressPct}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 rounded-full ${isFree ? 'bg-emerald-500' : 'bg-[#2563eb]'}`}
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Table Column Headers */}
               <div className="px-6 py-2.5 border-b border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
@@ -6320,6 +6399,26 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           }}
         />
       </React.Suspense>
+
+      {/* ============================================================
+          HIGH-SPEED PROTECTED PDF / BOOK SAMPLE READER
+          ============================================================ */}
+      <React.Suspense fallback={null}>
+        {activeProductDetail && (
+          <PdfSampleReader
+            isOpen={isPdfReaderOpen}
+            onClose={() => setIsPdfReaderOpen(false)}
+            pdfUrl={activeProductDetail.samplePdfUrl}
+            samplePages={activeProductDetail.samplePages || []}
+            productTitle={activeProductDetail.title}
+          />
+        )}
+      </React.Suspense>
+
+      {/* ============================================================
+          REAL-TIME RECENT SALES SOCIAL PROOF POPUP (FOMO)
+          ============================================================ */}
+      <RecentSalesNotification products={products} />
 
     </div>
   );

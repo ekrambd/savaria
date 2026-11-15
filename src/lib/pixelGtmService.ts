@@ -108,28 +108,32 @@ export const trackEvent = (eventName: string, data: Record<string, any> = {}, ev
     const gtmEventNames: Record<string, string> = {
       PageView: 'page_view',
       ViewContent: 'view_item',
+      ViewCategory: 'view_item_list',
+      BannerView: 'select_promotion',
+      BannerClick: 'select_promotion',
       AddToCart: 'add_to_cart',
       InitiateCheckout: 'begin_checkout',
       Purchase: 'purchase',
       Search: 'search',
       Contact: 'contact',
-      Lead: 'generate_lead'
+      Lead: 'generate_lead',
+      Wishlist: 'add_to_wishlist'
     };
 
     const gtmEvent = gtmEventNames[eventName] || eventName.toLowerCase();
     const payload: Record<string, any> = {
       event: gtmEvent,
-      event_id: eventId,
+      event_id: finalEventId,
       ...data
     };
 
     // Standard GA4 ecommerce object
-    if (['ViewContent', 'AddToCart', 'InitiateCheckout', 'Purchase'].includes(eventName)) {
+    if (['ViewContent', 'AddToCart', 'InitiateCheckout', 'Purchase', 'ViewCategory'].includes(eventName)) {
       payload.ecommerce = {
         currency: data.currency || 'BDT',
         value: data.value,
         items: data.contents || [],
-        ...(eventName === 'Purchase' ? { transaction_id: eventId } : {})
+        ...(eventName === 'Purchase' ? { transaction_id: finalEventId } : {})
       };
     }
 
@@ -144,8 +148,21 @@ export const trackEvent = (eventName: string, data: Record<string, any> = {}, ev
     const fbpMatch = rawCookies.match(/_fbp=([^;]+)/);
     const fbcMatch = rawCookies.match(/_fbc=([^;]+)/);
 
-    const capiEvents = ['PageView', 'ViewContent', 'AddToCart', 'InitiateCheckout', 'Purchase', 'Lead', 'Contact', 'Search'];
-    if (capiEvents.includes(eventName)) {
+    const capiEvents = [
+      'PageView', 
+      'ViewContent', 
+      'ViewCategory', 
+      'BannerView', 
+      'BannerClick', 
+      'AddToCart', 
+      'InitiateCheckout', 
+      'Purchase', 
+      'Lead', 
+      'Contact', 
+      'Search',
+      'Custom'
+    ];
+    if (capiEvents.includes(eventName) || eventName.startsWith('View') || eventName.startsWith('Banner')) {
       // Dynamic Meta Test Event Code resolution (from URL or session)
       let dynamicTestCode: string | undefined;
       if (typeof window !== 'undefined') {

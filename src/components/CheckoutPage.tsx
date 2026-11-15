@@ -35,6 +35,8 @@ interface CheckoutPageProps {
   onNavigateHome: () => void;
   onNavigateShop: () => void;
   onOpenLoginModal?: () => void;
+  selectedCustomerAddress?: any;
+  onOpenAddressModal?: () => void;
 }
 
 export default function CheckoutPage({
@@ -45,16 +47,70 @@ export default function CheckoutPage({
   ecomSettings,
   onNavigateHome,
   onNavigateShop,
-  onOpenLoginModal
+  onOpenLoginModal,
+  selectedCustomerAddress,
+  onOpenAddressModal
 }: CheckoutPageProps) {
-  // Pre-fill user data if logged in
+  // Pre-fill user data if logged in or from saved address
   const initialCustomer = useMemo(() => getCustomerSession(), []);
-  const [name, setName] = useState(() => initialCustomer?.name || '');
-  const [phone, setPhone] = useState(() => initialCustomer?.phone || '');
-  const [address, setAddress] = useState('');
+  
+  // Resolve saved address from props or localStorage
+  const savedAddress = useMemo(() => {
+    if (selectedCustomerAddress) return selectedCustomerAddress;
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('customer_saved_addresses');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.find((a: any) => a.isDefault) || parsed[0];
+          }
+        }
+      } catch {}
+    }
+    return null;
+  }, [selectedCustomerAddress]);
+
+  const [name, setName] = useState(() => savedAddress?.name || initialCustomer?.name || '');
+  const [phone, setPhone] = useState(() => savedAddress?.phone || initialCustomer?.phone || '');
+  const [address, setAddress] = useState(() => {
+    if (savedAddress?.address) {
+      return savedAddress.deliveryArea ? `${savedAddress.address}, ${savedAddress.deliveryArea}` : savedAddress.address;
+    }
+    return '';
+  });
 
   // Delivery zone: 'inside' (ঢাকার ভিতরে) or 'outside' (ঢাকার বাহিরে)
-  const [deliveryArea, setDeliveryArea] = useState<'inside' | 'outside'>('inside');
+  const [deliveryArea, setDeliveryArea] = useState<'inside' | 'outside'>(() => {
+    if (savedAddress?.deliveryArea) {
+      const areaLower = savedAddress.deliveryArea.toLowerCase();
+      if (areaLower.includes('inside') || areaLower.includes('dhaka') && !areaLower.includes('outside') && !areaLower.includes('suburb')) {
+        return 'inside';
+      } else if (areaLower.includes('outside') || areaLower.includes('chattogram') || areaLower.includes('sylhet') || areaLower.includes('rajshahi') || areaLower.includes('khulna')) {
+        return 'outside';
+      }
+    }
+    return 'inside';
+  });
+
+  // Automatically update fields when a saved address is selected or updated
+  useEffect(() => {
+    if (savedAddress) {
+      if (savedAddress.name) setName(savedAddress.name);
+      if (savedAddress.phone) setPhone(savedAddress.phone);
+      if (savedAddress.address) {
+        setAddress(savedAddress.deliveryArea ? `${savedAddress.address}, ${savedAddress.deliveryArea}` : savedAddress.address);
+      }
+      if (savedAddress.deliveryArea) {
+        const areaLower = savedAddress.deliveryArea.toLowerCase();
+        if (areaLower.includes('outside') || (!areaLower.includes('dhaka') && areaLower.length > 2)) {
+          setDeliveryArea('outside');
+        } else {
+          setDeliveryArea('inside');
+        }
+      }
+    }
+  }, [savedAddress]);
 
   // Coupon state
   const [couponInput, setCouponInput] = useState('');
@@ -584,8 +640,17 @@ export default function CheckoutPage({
             <div className="bg-white rounded-md border border-slate-200 overflow-hidden shadow-xs">
               
               {/* Dark Header */}
-              <div className="bg-[#3f3f46] text-white py-2.5 px-4 text-center font-bold text-sm sm:text-base">
-                আপনার ঠিকানা
+              <div className="bg-[#3f3f46] text-white py-2.5 px-4 flex items-center justify-between font-bold text-sm sm:text-base">
+                <span>আপনার ঠিকানা</span>
+                {onOpenAddressModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAddressModal}
+                    className="text-xs font-medium text-emerald-300 hover:text-white underline cursor-pointer"
+                  >
+                    {savedAddress ? 'ঠিকানা পরিবর্তন করুন' : '+ নতুন ঠিকানা যুক্ত করুন'}
+                  </button>
+                )}
               </div>
 
               {/* Form Body */}

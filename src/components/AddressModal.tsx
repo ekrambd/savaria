@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { CustomerAddress } from '../types';
 import { getCustomerSession, setCustomerSession } from '../lib/customerAuth';
+import { BD_ALL_DISTRICTS } from '../lib/deliveryCalculator';
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -387,24 +388,51 @@ export default function AddressModal({
                 />
               </div>
 
-              {/* Select Delivery Area */}
+              {/* Select Delivery Area / District */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">
-                  Select Delivery Area <span className="text-rose-500">*</span>
-                </label>
-                <div 
-                  onClick={() => setShowAreaCascade(!showAreaCascade)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 flex items-center justify-between cursor-pointer hover:border-slate-300"
-                >
-                  <span className={deliveryArea ? 'font-semibold text-slate-900' : 'text-slate-400'}>
-                    {deliveryArea || 'Select delivery area'}
-                  </span>
-                  <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${showAreaCascade ? 'rotate-90' : ''}`} />
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">
+                    Select Delivery Area / District <span className="text-rose-500">*</span>
+                  </label>
+                  {cities.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAreaCascade(!showAreaCascade)}
+                      className="text-[11px] font-semibold text-teal-700 hover:underline cursor-pointer"
+                    >
+                      {showAreaCascade ? 'Standard District' : 'Detailed Zone/Thana'}
+                    </button>
+                  )}
                 </div>
 
-                {/* Cascade Selector */}
-                {showAreaCascade && (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 mt-2">
+                {!showAreaCascade ? (
+                  /* Clean Manual / District Selector (Steadfast & General Courier Friendly) */
+                  <select
+                    value={deliveryArea}
+                    onChange={(e) => setDeliveryArea(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700 cursor-pointer"
+                  >
+                    <option value="">Select District / Delivery Area</option>
+                    <optgroup label="Popular Delivery Areas">
+                      <option value="Dhaka">Dhaka (Inside City)</option>
+                      <option value="Dhaka Suburb">Dhaka Suburb (Savar, Gazipur, Narayanganj, Keraniganj)</option>
+                      <option value="Chattogram">Chattogram</option>
+                      <option value="Sylhet">Sylhet</option>
+                      <option value="Rajshahi">Rajshahi</option>
+                      <option value="Khulna">Khulna</option>
+                    </optgroup>
+                    <optgroup label="All 64 Districts (Steadfast Courier)">
+                      {BD_ALL_DISTRICTS.map((dist) => (
+                        <option key={dist} value={dist}>
+                          {dist}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                ) : (
+                  /* Detailed Cascade (City > Zone > Thana) */
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <select
                         value={selectedCity}
@@ -448,7 +476,7 @@ export default function AddressModal({
                         onClick={() => setShowAreaCascade(false)}
                         className="px-3 py-1 bg-slate-200 text-slate-700 text-xs rounded-lg"
                       >
-                        Cancel
+                        Use District Dropdown
                       </button>
                       <button
                         type="button"
