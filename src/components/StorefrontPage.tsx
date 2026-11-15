@@ -3197,7 +3197,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       {((activeProductDetail as any).specTable || []).map((row: any, rIdx: number) => (
                         <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}>
                           <td className="py-3 px-4 font-bold text-slate-700 w-1/3">
-                            {row.label || row.name || row.key}
+                            {row.label || row.feature || row.name || row.key}
                           </td>
                           <td className="py-3 px-4 text-slate-600">
                             {row.details || row.value}
@@ -3210,33 +3210,6 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               </div>
             </div>
           )}
-
-                <div className="overflow-hidden rounded-xl border border-slate-200 shadow-xs bg-white">
-                  <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                    <thead>
-                      <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-800 font-bold uppercase text-[11px] sm:text-xs tracking-wider">
-                        <th className="py-3 px-3 sm:px-5 w-2/5 sm:w-1/3 border-r border-slate-200">Feature</th>
-                        <th className="py-3 px-3 sm:px-5">Details</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {((activeProductDetail as any).specTable as any[]).map((row: any, idx: number) => (
-                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50/60' : 'bg-slate-50/40 hover:bg-slate-50/70'}>
-                          <td className="py-3 px-3 sm:px-5 font-semibold text-slate-900 border-r border-slate-200/80 align-top">
-                            {row.feature || row.label}
-                          </td>
-                          <td className="py-3 px-3 sm:px-5 text-slate-700 leading-relaxed align-top">
-                            {row.details || row.value}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-          </div>
 
           {/* Related / Other Products Section */}
           {products.filter(p => p.id !== activeProductDetail.id).length > 0 && (
