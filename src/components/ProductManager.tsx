@@ -149,16 +149,16 @@ export default function ProductManager({
   useEffect(() => {
     async function loadData() {
       try {
-        const [settings, brandsData, unitsData, attrsData, catItemsData] = await Promise.all([
+        const [settings, brandsData, unitsData, attrsData, catItemsRes] = await Promise.all([
           dbService.getEcomSettings(),
           dbService.getBrands(),
           dbService.getUnits(),
           dbService.getAttributes(),
-          dbService.getCategoryItems().catch(() => [])
+          fetch('/api/categories').then(r => r.ok ? r.json() : []).catch(() => [])
         ]);
         let loadedCats: CategoryItem[] = [];
-        if (catItemsData && catItemsData.length > 0) {
-          loadedCats = catItemsData;
+        if (Array.isArray(catItemsRes) && catItemsRes.length > 0) {
+          loadedCats = catItemsRes;
         } else if (settings.categoryItems && settings.categoryItems.length > 0) {
           loadedCats = settings.categoryItems;
         } else if (settings.categories && settings.categories.length > 0) {
