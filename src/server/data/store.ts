@@ -72,18 +72,15 @@ export function saveProductsToDisk(products: Product[]): void {
   storeProducts = products;
   
   if (productSaveDebounce) clearTimeout(productSaveDebounce);
-  productSaveDebounce = setTimeout(() => {
-    try {
-      const dir = path.dirname(PRODUCTS_STORAGE_FILE);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      fs.promises.writeFile(PRODUCTS_STORAGE_FILE, JSON.stringify(products, null, 2), 'utf-8')
-        .catch(err => console.error('[store] Async failed saving products to disk:', err));
-    } catch (err) {
-      console.error('[store] Failed saving products to disk:', err);
+  try {
+    const dir = path.dirname(PRODUCTS_STORAGE_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
-  }, 50);
+    fs.writeFileSync(PRODUCTS_STORAGE_FILE, JSON.stringify(products, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('[store] Failed saving products to disk:', err);
+  }
 }
 
 export let storeProducts: Product[] = loadProductsFromDisk();

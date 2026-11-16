@@ -1127,6 +1127,30 @@ export const dbService = {
     window.dispatchEvent(new Event('ecom-products-updated'));
   },
 
+  async bulkDeleteProducts(ids: string[]): Promise<void> {
+    try {
+      await fetch('/api/products/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders()
+        },
+        body: JSON.stringify({ ids })
+      });
+    } catch (e) {
+      console.warn('Failed bulk deleting products on server:', e);
+    }
+
+    const idSet = new Set(ids);
+    const current = getLocalData<Product[]>('noor_ecom_products', []);
+    const updated = current.filter(p => !idSet.has(p.id));
+    setLocalData('noor_ecom_products', updated);
+    try {
+      localStorage.setItem('noor_ecom_products', JSON.stringify(updated));
+    } catch {}
+    window.dispatchEvent(new Event('ecom-products-updated'));
+  },
+
   async deleteAllProducts(): Promise<void> {
     try {
       const current = await this.getProducts();

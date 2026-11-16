@@ -133,14 +133,7 @@ productRouter.get('/', async (req, res) => {
   });
 
   // High-performance ETag for instant 304 Not Modified (Saves bandwidth & CPU)
-  if (!isKeysetRequested && !includeReviews && !includeBrand) {
-    const catalogHash = `W/"prod-${products.length}-${products[0]?.id || ''}-${products[0]?.price || ''}"`;
-    res.setHeader('ETag', catalogHash);
-    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=45');
-    if (req.headers['if-none-match'] === catalogHash) {
-      return res.status(304).end();
-    }
-  }
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
   if (isKeysetRequested) {
     const limit = Number(req.query.limit) || 20;
@@ -273,6 +266,22 @@ productRouter.put('/:id', (req, res) => {
   } else {
     res.status(404).json({ error: "Product not found" });
   }
+});
+
+// BULK DELETE Products
+productRouter.post('/bulk-delete', (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'IDs array is required' });
+  }
+  const idSet = new Set(ids);
+  const prods = loadProductsFromDisk();
+  const updated = prods.filter(p => !idSet.has(p.id));
+  saveProductsToDisk(updated);
+  setStoreProducts(updated);
+
+  globalCache.invalidateTag('products');
+  res.json({ success: true, count: ids.length, remaining: updated.length });
 });
 
 // DELETE Product - removes and invalidates cache

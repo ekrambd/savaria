@@ -1045,9 +1045,7 @@ export default function ProductManager({
     setIsBulkDeleting(true);
     const count = selectedProductIds.length;
     try {
-      for (const id of selectedProductIds) {
-        await onDeleteProduct(id);
-      }
+      await dbService.bulkDeleteProducts(selectedProductIds);
       setSelectedProductIds([]);
       setShowBulkDeleteModal(false);
       setFeedback({
