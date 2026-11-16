@@ -3108,18 +3108,6 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <span>Add to Cart</span>
                 </button>
 
-                {/* Optional Prominent "বইটি পড়ে দেখুন" Action Button for Publications */}
-                {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) || activeProductDetail.category === 'Book / Publication' || (activeProductDetail as any).pdfUrl) && (
-                  <button 
-                    type="button"
-                    onClick={() => setIsPdfReaderOpen(true)}
-                    className="sm:col-span-2 w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold py-3 px-4 rounded-lg text-sm sm:text-base shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-2 border border-emerald-500/30"
-                  >
-                    <BookOpen className="w-5 h-5 text-white animate-pulse shrink-0" />
-                    <span>বইটি পড়ে দেখুন (Sample Pages / PDF)</span>
-                  </button>
-                )}
-
                 {/* Button 3 (Bottom Left): 💬 WhatsApp / Helpline (Dynamic from Store Profile) */}
                 {(() => {
                   const rawWa = socialLinks?.whatsapp || liveHeaderSettings?.socialLinks?.whatsapp || headerPhone || displayPhone || '01635311494';

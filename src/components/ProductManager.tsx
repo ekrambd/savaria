@@ -149,14 +149,17 @@ export default function ProductManager({
   useEffect(() => {
     async function loadData() {
       try {
-        const [settings, brandsData, unitsData, attrsData] = await Promise.all([
+        const [settings, brandsData, unitsData, attrsData, catItemsData] = await Promise.all([
           dbService.getEcomSettings(),
           dbService.getBrands(),
           dbService.getUnits(),
-          dbService.getAttributes()
+          dbService.getAttributes(),
+          dbService.getCategoryItems().catch(() => [])
         ]);
         let loadedCats: CategoryItem[] = [];
-        if (settings.categoryItems && settings.categoryItems.length > 0) {
+        if (catItemsData && catItemsData.length > 0) {
+          loadedCats = catItemsData;
+        } else if (settings.categoryItems && settings.categoryItems.length > 0) {
           loadedCats = settings.categoryItems;
         } else if (settings.categories && settings.categories.length > 0) {
           loadedCats = settings.categories.map((c, idx) => ({
@@ -165,6 +168,34 @@ export default function ProductManager({
             subcategories: []
           }));
         }
+
+        // Also incorporate any distinct categories from existing products (e.g. "Book / Publication")
+        const existingCatNames = new Set(loadedCats.map(c => c.name.toLowerCase().trim()));
+        if (products && products.length > 0) {
+          products.forEach((p, idx) => {
+            const catName = p.category?.trim();
+            if (catName && !existingCatNames.has(catName.toLowerCase())) {
+              existingCatNames.add(catName.toLowerCase());
+              loadedCats.push({
+                id: `cat-prod-${idx}`,
+                name: catName,
+                order: loadedCats.length,
+                subcategories: []
+              });
+            }
+          });
+        }
+
+        // Always guarantee 'Book / Publication' is available as a category option
+        if (!existingCatNames.has('book / publication')) {
+          loadedCats.push({
+            id: 'cat-book-publication',
+            name: 'Book / Publication',
+            order: loadedCats.length,
+            subcategories: []
+          });
+        }
+
         setStoreCategories(loadedCats);
         setStoreBrands(brandsData || []);
         setStoreUnits(unitsData || []);
@@ -2571,12 +2602,12 @@ export default function ProductManager({
                                   onChange={async (ev) => {
                                     const f = ev.target.files?.[0];
                                     if (!f) return;
-                                    if (f.size > 5 * 1024 * 1024) {
+                                    if (f.size > 10 * 1024 * 1024) {
                                       setFeedback({
                                         isOpen: true,
                                         type: 'error',
                                         title: 'File too large',
-                                        message: 'PDF file size must be less than 5 MB.'
+                                        message: 'PDF file size must be less than 10 MB.'
                                       });
                                       return;
                                     }
@@ -2599,7 +2630,7 @@ export default function ProductManager({
                                   }} 
                                   className="hidden" 
                                 />
-                                {isUploadingSamplePdf ? 'Uploading PDF...' : 'Upload PDF Sample (≤ 5MB)'}
+                                {isUploadingSamplePdf ? 'Uploading PDF...' : 'Upload PDF Sample (≤ 10MB)'}
                               </label>
 
                               <input 
@@ -3775,20 +3806,43 @@ export default function ProductManager({
               <FileText className="h-5 w-5 text-teal-600" />
               <span>PDF preview</span>
             </h3>
-            <button 
-              type="button" 
-              onClick={() => setPreviewPdfUrl(null)}
-              className="p-2 bg-rose-50 text-rose-600 rounded-full hover:bg-rose-100 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                href={previewPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition"
+              >
+                Open in new tab ↗
+              </a>
+              <button 
+                type="button" 
+                onClick={() => setPreviewPdfUrl(null)}
+                className="p-2 bg-rose-50 text-rose-600 rounded-full hover:bg-rose-100 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
-          <div className="flex-1 w-full bg-slate-100">
-            <iframe 
-              src={previewPdfUrl} 
+          <div className="flex-1 w-full bg-slate-100 relative">
+            <object 
+              data={previewPdfUrl} 
+              type="application/pdf"
               className="w-full h-full border-none"
-              title="PDF Preview"
-            />
+            >
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                <FileText className="h-16 w-16 text-slate-400 mb-3" />
+                <p className="text-sm font-bold text-slate-700 mb-2">PDF প্রিভিউ সরাসরি লোড হতে পারেনি</p>
+                <a 
+                  href={previewPdfUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-teal-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-teal-700"
+                >
+                  ব্রাউজারে নতুন ট্যাবে দেখুন
+                </a>
+              </div>
+            </object>
           </div>
         </div>
       )}

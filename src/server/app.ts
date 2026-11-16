@@ -39,9 +39,10 @@ app.set('trust proxy', true);
 // ==========================================
 // COMPREHENSIVE SECURITY HEADERS (Helmet Equivalent)
 // ==========================================
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  // Allow SAMEORIGIN framing so admin & customer in-app preview can display uploaded PDFs and widgets
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -144,7 +145,13 @@ if (!fs.existsSync(publicUploadsDir)) {
 }
 app.use('/uploads', express.static(publicUploadsDir, {
   maxAge: '1y',
-  immutable: true
+  immutable: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+    }
+  }
 }));
 
 // Service Worker endpoint
