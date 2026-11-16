@@ -1196,6 +1196,29 @@ export const dbService = {
     };
   },
 
+  // Safe Category Helper to guarantee compatibility
+  async getCategoryItems(): Promise<CategoryItem[]> {
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+      }
+    } catch {}
+    const settings = await this.getEcomSettings();
+    if (settings.categoryItems && settings.categoryItems.length > 0) {
+      return settings.categoryItems;
+    }
+    if (settings.categories && settings.categories.length > 0) {
+      return settings.categories.map((c, idx) => ({
+        id: `cat-${idx}`,
+        name: c,
+        subcategories: []
+      }));
+    }
+    return [];
+  },
+
   // --- E-Commerce Settings (Pixel, GTM, Pathao) ---
   async getEcomSettings(): Promise<EcomSettings> {
     let result = DEFAULT_ECOM_SETTINGS;
