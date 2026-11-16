@@ -74,7 +74,8 @@
     "Kids Fashion",
     "Hijab",
     "Bag",
-    "Womens"
+    "Womens",
+    "Book / Publication"
   ],
   "beforeAfter": {
     "enabled": false,
@@ -820,6 +821,12 @@
           "order": 4
         }
       ]
+    },
+    {
+      "id": "cat-book-publication",
+      "name": "Book / Publication",
+      "order": 5,
+      "subcategories": []
     }
   ],
   "maintenanceMode": false,
