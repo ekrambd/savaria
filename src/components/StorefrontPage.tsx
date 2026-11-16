@@ -207,16 +207,9 @@ function AutoScrollCategorySection({
   const [activeDot, setActiveDot] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Ensure every category section has enough items to auto-scroll continuously
+  // Only display unique actual products (Do NOT artificially duplicate a single item across all slots)
   const displayProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
-    if (products.length < 8) {
-      const repeated = [...products];
-      while (repeated.length < 12) {
-        repeated.push(...products);
-      }
-      return repeated;
-    }
     return products;
   }, [products]);
 
@@ -2903,15 +2896,15 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               </div>
 
               {/* PDF Sample Reader Button (High-Speed Protected Reading Viewer) */}
-              {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0)) && (
+              {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) || activeProductDetail.category === 'Book / Publication' || (activeProductDetail as any).pdfUrl) && (
                 <div className="pt-2">
                   <button
                     type="button"
                     onClick={() => setIsPdfReaderOpen(true)}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065f46] text-white font-extrabold text-sm sm:text-base rounded-xl transition shadow-lg hover:shadow-xl active:scale-98 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30"
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-sm sm:text-base rounded-xl transition-all shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2.5 cursor-pointer border border-emerald-400/40 ring-2 ring-emerald-500/20"
                   >
-                    <BookOpen className="w-5 h-5 text-white animate-pulse" />
-                    <span>পিডিএফ স্যাম্পল পড়ে দেখুন</span>
+                    <BookOpen className="w-5 h-5 text-white animate-bounce shrink-0" />
+                    <span>📖 বইটি পড়ে দেখুন (পিডিএফ স্যাম্পল)</span>
                   </button>
                 </div>
               )}
@@ -3114,6 +3107,18 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <ShoppingBag className="w-4 h-4 shrink-0" />
                   <span>Add to Cart</span>
                 </button>
+
+                {/* Optional Prominent "বইটি পড়ে দেখুন" Action Button for Publications */}
+                {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) || activeProductDetail.category === 'Book / Publication' || (activeProductDetail as any).pdfUrl) && (
+                  <button 
+                    type="button"
+                    onClick={() => setIsPdfReaderOpen(true)}
+                    className="sm:col-span-2 w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold py-3 px-4 rounded-lg text-sm sm:text-base shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-2 border border-emerald-500/30"
+                  >
+                    <BookOpen className="w-5 h-5 text-white animate-pulse shrink-0" />
+                    <span>বইটি পড়ে দেখুন (Sample Pages / PDF)</span>
+                  </button>
+                )}
 
                 {/* Button 3 (Bottom Left): 💬 WhatsApp / Helpline (Dynamic from Store Profile) */}
                 {(() => {

@@ -117,35 +117,47 @@ orderRouter.get('/track', (req, res) => {
 orderRouter.get('/public-recent', (_req, res) => {
   try {
     const recent = storeOrders
-      .filter(o => o && o.status !== 'cancelled')
+      .filter(o => o && o.status !== 'cancelled' && Array.isArray(o.items) && o.items.length > 0)
       .slice(-15)
       .reverse()
       .map(o => {
-        // Mask customer name (e.g. "Rakibul Hasan" -> "রাকিব **" or "Rakib H.")
-        const fullName = (o.customerName || o.name || 'Customer').trim();
-        const firstName = fullName.split(' ')[0] || 'Customer';
-        const maskedName = firstName;
+        // Mask customer name (e.g. "Rakibul Hasan" -> "Rakibul")
+        const fullName = (o.customerName || o.name || '').trim();
+        const firstName = fullName ? fullName.split(' ')[0] : 'কাস্টমার';
 
         // Extract city from district or address
         const city = o.customerDistrict || o.district || (o.address && o.address.includes('ঢাকা') ? 'ঢাকা' : 'বাংলাদেশ');
 
         const firstItem = (o.items && o.items[0]) || {};
-        const title = firstItem.productTitle || firstItem.title || 'বই/পণ্য';
+        const title = firstItem.productTitle || firstItem.title || o.productName || o.productTitle || '';
         const image = firstItem.productImage || firstItem.image || '';
+
+        // If no genuine product title, skip
+        if (!title || title === 'বই/পণ্য' || title === 'পণ্য') {
+          return null;
+        }
 
         // Calculate minutes ago
         const orderTime = o.createdAt ? new Date(o.createdAt).getTime() : Date.now();
         const diffMinutes = Math.max(1, Math.round((Date.now() - orderTime) / 60000));
 
+        let formattedTime = `${diffMinutes} মিনিট`;
+        if (diffMinutes >= 60 && diffMinutes < 1440) {
+          formattedTime = `${Math.round(diffMinutes / 60)} ঘণ্টা`;
+        } else if (diffMinutes >= 1440) {
+          formattedTime = `${Math.round(diffMinutes / 1440)} দিন`;
+        }
+
         return {
           id: o.id,
-          buyer: maskedName,
+          buyer: firstName,
           city: city,
           productTitle: title,
           productImage: image,
-          minutesAgo: diffMinutes > 1440 ? `${Math.round(diffMinutes / 1440)} দিন` : `${diffMinutes} মিনিট`
+          minutesAgo: formattedTime
         };
-      });
+      })
+      .filter(Boolean);
 
     res.json({
       success: true,

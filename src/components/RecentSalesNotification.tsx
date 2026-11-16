@@ -6,18 +6,6 @@ interface RecentSalesNotificationProps {
   products: Product[];
 }
 
-const BUYER_NAMES = [
-  'রাকিব হাসান', 'তানভীর আহমেদ', 'মেহেদী হাসান', 'সুমাইয়া আক্তার', 'মাহমুদুল হক',
-  'ফারিয়া জামান', 'আসিফ ইকবাল', 'নুসরাত জাহান', 'শামীম ওসমান', 'সায়মা রহমান'
-];
-
-const CITIES = [
-  'রাজশাহী', 'ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'খুলনা', 
-  'বগুড়া', 'কুমিল্লা', 'রংপুর', 'ময়মনসিংহ', 'গাজীপুর'
-];
-
-const TIME_MINUTES = [2, 5, 8, 12, 16, 22, 35];
-
 // Gentle, premium audio chime using Web Audio API (No heavy external mp3 asset required)
 const playNotificationChime = () => {
   try {
@@ -75,29 +63,44 @@ export const RecentSalesNotification: React.FC<RecentSalesNotificationProps> = (
     let timeoutId: NodeJS.Timeout;
     let intervalId: NodeJS.Timeout;
 
-    // Fetch REAL orders from backend API
+    // Fetch ONLY REAL orders from backend API
     const checkRealOrders = async () => {
       try {
         const res = await fetch('/api/orders/public-recent');
+        if (!res.ok) return;
         const data = await res.json();
+        
+        // Strict check: Only show if there are genuine confirmed orders
         if (data.success && Array.isArray(data.orders) && data.orders.length > 0) {
-          // Pick a real recent order
-          const randomOrder = data.orders[Math.floor(Math.random() * data.orders.length)];
+          // Filter to only orders with real product titles
+          const realOrders = data.orders.filter(
+            (o: any) => o && o.productTitle && o.productTitle !== 'বই/পণ্য' && o.productTitle !== 'পণ্য'
+          );
+
+          if (realOrders.length === 0) {
+            setIsVisible(false);
+            return;
+          }
+
+          // Pick from confirmed real orders
+          const randomOrder = realOrders[Math.floor(Math.random() * realOrders.length)];
           if (randomOrder && randomOrder.productTitle) {
-            // Find product image if missing
-            const matchedProduct = products.find(p => p.title === randomOrder.productTitle || p.id === randomOrder.productId);
-            const fallbackImg = matchedProduct?.coverImage || matchedProduct?.image || '/favicon/favicon-32x32.png';
+            // Find product image
+            const matchedProduct = products.find(
+              p => p.title?.trim().toLowerCase() === randomOrder.productTitle?.trim().toLowerCase() || p.id === randomOrder.productId
+            );
+            const displayImg = randomOrder.productImage || matchedProduct?.coverImage || matchedProduct?.image || '';
 
             setCurrentSale({
               buyer: randomOrder.buyer || 'সম্মানিত গ্রাহক',
               city: randomOrder.city || 'বাংলাদেশ',
               productTitle: randomOrder.productTitle,
-              productImage: randomOrder.productImage || fallbackImg,
+              productImage: displayImg,
               minutesAgo: randomOrder.minutesAgo || 'অল্প কিছুক্ষণ'
             });
             setIsVisible(true);
 
-            // Play notification chime
+            // Play gentle chime
             playNotificationChime();
 
             // Auto hide after 6 seconds
@@ -105,16 +108,19 @@ export const RecentSalesNotification: React.FC<RecentSalesNotificationProps> = (
               setIsVisible(false);
             }, 6000);
           }
+        } else {
+          setIsVisible(false);
         }
       } catch {
-        // Silently skip if no real orders
+        // Silently skip if network error or no real orders
+        setIsVisible(false);
       }
     };
 
-    // First check after 10s, then repeat every 35s
+    // First check after 10s, then poll every 40s
     timeoutId = setTimeout(() => {
       checkRealOrders();
-      intervalId = setInterval(checkRealOrders, 35000);
+      intervalId = setInterval(checkRealOrders, 40000);
     }, 10000);
 
     return () => {
@@ -123,6 +129,7 @@ export const RecentSalesNotification: React.FC<RecentSalesNotificationProps> = (
     };
   }, [products]);
 
+  // If no real order or hidden, render nothing
   if (!isVisible || !currentSale) return null;
 
   return (
