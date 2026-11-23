@@ -10,3 +10,14 @@ const adapter = new PrismaBetterSqlite3({
 });
 
 export const prisma = new PrismaClient({ adapter });
+
+// High-speed SQLite Pragmas (WAL Mode, in-memory temp store, 64MB cache & memory mapping)
+try {
+  (prisma as any).$executeRawUnsafe?.(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA temp_store = MEMORY;
+    PRAGMA cache_size = -64000;
+    PRAGMA mmap_size = 268435456;
+  `).catch(() => {});
+} catch {}
