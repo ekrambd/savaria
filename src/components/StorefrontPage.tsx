@@ -6354,11 +6354,6 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
         )}
       </React.Suspense>
 
-      {/* ============================================================
-          REAL-TIME RECENT SALES SOCIAL PROOF POPUP (FOMO)
-          ============================================================ */}
-      <RecentSalesNotification products={products} />
-
     </div>
   );
 }
