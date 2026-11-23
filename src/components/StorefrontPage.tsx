@@ -1231,58 +1231,12 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
     return list;
   }, [ecomSettings?.featuredCollections, products]);
 
-  // Display Brands for "OUR BRANDS" Section
+  // Display Brands for "OUR BRANDS" Section - only shows real brands created in admin
   const DISPLAY_BRANDS = useMemo(() => {
-    const baseBrands = [
-      {
-        name: 'Purple',
-        icon: (
-          <div className="w-12 h-12 rounded-full border-2 border-purple-700 flex items-center justify-center">
-            <span className="font-serif italic font-bold text-xl text-purple-700">P</span>
-          </div>
-        )
-      },
-      {
-        name: 'Shopping Zone BD LTD',
-        icon: (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-green-300">
-            <ShoppingBag className="w-4 h-4 text-green-600 shrink-0" />
-            <span className="font-black text-[10px] text-green-700 tracking-tighter uppercase leading-none">
-              SHOPPING ZONE BD
-            </span>
-          </div>
-        )
-      },
-      {
-        name: 'Style Different',
-        icon: (
-          <div className="flex items-center gap-1 text-center">
-            <div className="text-green-600 font-black text-xl leading-none">SD</div>
-            <div className="text-[7px] text-teal-600 font-bold uppercase leading-tight">STYLE<br/>DIFFERENT</div>
-          </div>
-        )
-      },
-      {
-        name: 'Shoppingzone BD Co.',
-        icon: (
-          <div className="w-12 h-12 rounded-full border-2 border-dashed border-green-400 p-0.5 flex items-center justify-center text-center">
-            <span className="text-[7px] font-black text-green-700 uppercase leading-none">SZ BD<br/>CO.</span>
-          </div>
-        )
-      },
-      {
-        name: 'Asmi Supershop',
-        icon: (
-          <div className="flex items-center gap-0.5">
-            <span className="text-teal-600 font-black text-xl tracking-tighter">A<span className="text-green-600">.</span>SMI</span>
-          </div>
-        )
-      }
-    ];
     if (realBrands && realBrands.length > 0) {
-      return [...realBrands.map(b => ({ name: b.name, logo: b.logo })), ...baseBrands];
+      return realBrands.map(b => ({ name: b.name, logo: b.logo }));
     }
-    return baseBrands;
+    return [];
   }, [realBrands]);
 
   // Real Backend Categories with their actual live products (Dynamic, No Fake Static Data)

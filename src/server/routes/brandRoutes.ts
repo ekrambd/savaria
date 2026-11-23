@@ -6,13 +6,8 @@ import { loadSettingsFromDisk } from '../data/store';
 
 export const brandRouter = Router();
 
-const DEFAULT_STORE_BRANDS = [
-  { id: 'b-1', name: 'Purple', logo: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=200&fit=crop&q=80', description: 'Premium Fashion' },
-  { id: 'b-2', name: 'Shopping Zone BD LTD', logo: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&fit=crop&q=80', description: 'Fashionable Wear in Reasonable Price' },
-  { id: 'b-3', name: 'Style Different', logo: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=200&fit=crop&q=80', description: 'Style Different' },
-  { id: 'b-4', name: 'Shoppingzone BD Co.', logo: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=200&fit=crop&q=80', description: 'Shoppingzone BD Co.' },
-  { id: 'b-5', name: 'Asmi Supershop', logo: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&fit=crop&q=80', description: 'Asmi Supershop' }
-];
+// No static seed brands - returns empty array unless created in admin/db
+const DEFAULT_STORE_BRANDS: any[] = [];
 
 // GET all brands - Always fresh
 brandRouter.get('/', async (req, res) => {
