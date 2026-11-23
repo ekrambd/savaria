@@ -4086,52 +4086,34 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       {activeNav === 'home' && (
         <>
           {/* ============================================================
-              1. CLEAN 3-COLUMN HERO BANNER GRID (MATCHING VENT SCREENSHOT 1)
+              1. HERO BANNERS (ONLY RENDER IF ADMIN HAS CONFIGURED BANNERS)
               ============================================================ */}
-          <section className="bg-white pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-stone-200">
-            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-              {(() => {
-                const banners = (activeHeroBanners && activeHeroBanners.length >= 3)
-                  ? activeHeroBanners.slice(0, 3)
-                  : [
-                      {
-                        title: 'Formal Wear',
-                        subtitle: 'Executive & Elegant',
-                        image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&auto=format&fit=crop&q=80',
-                        buttonText: 'VIEW MORE',
-                        category: shoppingCategories[0]?.rawName || shoppingCategories[0]?.name || 'All'
-                      },
-                      {
-                        title: 'Casual Wear',
-                        subtitle: 'Comfortable & Modern',
-                        image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800&auto=format&fit=crop&q=80',
-                        buttonText: 'VIEW MORE',
-                        category: shoppingCategories[1]?.rawName || shoppingCategories[1]?.name || 'All'
-                      },
-                      {
-                        title: 'Imported Exclusive',
-                        subtitle: 'Premium Curated Selection',
-                        image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80',
-                        buttonText: 'VIEW MORE',
-                        category: shoppingCategories[2]?.rawName || shoppingCategories[2]?.name || 'All'
-                      }
-                    ];
-
-                return (
+          {activeHeroBanners && activeHeroBanners.length > 0 && (
+            <section className="bg-white pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-stone-200">
+              <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+                {activeHeroBanners.length >= 3 ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                    {banners.map((item: any, idx: number) => {
-                      const img = item.imageUrl || item.image || (shoppingCategories[idx]?.image) || DEFAULT_STORE_FALLBACK_IMAGE;
-                      const title = item.title || (shoppingCategories[idx]?.name) || `Collection ${idx + 1}`;
-                      const targetCat = item.category || (shoppingCategories[idx]?.rawName || shoppingCategories[idx]?.name || 'All');
+                    {activeHeroBanners.slice(0, 3).map((item: any, idx: number) => {
+                      const img = item.imageUrl || item.image || DEFAULT_STORE_FALLBACK_IMAGE;
+                      const title = item.title || `Collection ${idx + 1}`;
+                      const targetCat = item.category || 'All';
 
                       return (
                         <div
-                          key={idx}
+                          key={item.id || idx}
                           onClick={() => {
-                            if (targetCat && targetCat !== 'All') {
-                              setSelectedCategoryCheckbox(targetCat);
+                            if (item.buttonLink) {
+                              if (item.buttonLink.startsWith('http')) {
+                                window.open(item.buttonLink, '_blank');
+                              } else {
+                                navigate(item.buttonLink);
+                              }
+                            } else {
+                              if (targetCat && targetCat !== 'All') {
+                                setSelectedCategoryCheckbox(targetCat);
+                              }
+                              navigateTo('shop');
                             }
-                            navigateTo('shop');
                           }}
                           className="relative aspect-[4/5] sm:aspect-[3/4] w-full overflow-hidden bg-stone-100 group cursor-pointer"
                         >
@@ -4144,25 +4126,73 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                           <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors" />
 
                           {/* Center Title and View More Button */}
-                          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-wide drop-shadow-md mb-4 sm:mb-6">
-                              {title}
-                            </h3>
-                            <button
-                              type="button"
-                              className="px-6 py-2.5 bg-white text-stone-900 text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-stone-900 hover:text-white transition-all duration-300 shadow-md cursor-pointer"
-                            >
-                              {item.buttonText || 'VIEW MORE'}
-                            </button>
-                          </div>
+                          {(item.title || item.buttonText) && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                              {item.title && (
+                                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-wide drop-shadow-md mb-4 sm:mb-6">
+                                  {item.title}
+                                </h3>
+                              )}
+                              <button
+                                type="button"
+                                className="px-6 py-2.5 bg-white text-stone-900 text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-stone-900 hover:text-white transition-all duration-300 shadow-md cursor-pointer"
+                              >
+                                {item.buttonText || 'VIEW MORE'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
-                );
-              })()}
-            </div>
-          </section>
+                ) : (
+                  /* Single or 2-banner clean showcase */
+                  <div className={`grid grid-cols-1 ${activeHeroBanners.length === 2 ? 'md:grid-cols-2' : ''} gap-4 sm:gap-6`}>
+                    {activeHeroBanners.map((item: any, idx: number) => {
+                      const img = item.imageUrl || item.image || DEFAULT_STORE_FALLBACK_IMAGE;
+                      return (
+                        <div
+                          key={item.id || idx}
+                          onClick={() => {
+                            if (item.buttonLink) {
+                              if (item.buttonLink.startsWith('http')) {
+                                window.open(item.buttonLink, '_blank');
+                              } else {
+                                navigate(item.buttonLink);
+                              }
+                            } else {
+                              navigateTo('shop');
+                            }
+                          }}
+                          className="relative aspect-[16/7] sm:aspect-[21/9] w-full overflow-hidden bg-stone-100 group cursor-pointer rounded-sm"
+                        >
+                          <img
+                            src={img}
+                            alt={item.title || 'Banner'}
+                            className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-700 ease-out"
+                          />
+                          {(item.title || item.buttonText) && (
+                            <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center p-6 text-center text-white">
+                              {item.title && (
+                                <h2 className="text-2xl sm:text-4xl font-black mb-3 drop-shadow">
+                                  {item.title}
+                                </h2>
+                              )}
+                              {item.buttonText && (
+                                <button className="px-6 py-2.5 bg-white text-stone-900 text-xs font-bold uppercase tracking-widest shadow">
+                                  {item.buttonText}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* ============================================================
               2. NEW ARRIVALS - MINIMAL 4-COLUMN PRODUCT GRID (MATCHING VENT SCREENSHOT 2)
