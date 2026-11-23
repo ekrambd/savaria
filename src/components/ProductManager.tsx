@@ -2614,6 +2614,7 @@ export default function ProductManager({
                                       const dest = `products/${editingProduct?.id || 'new'}-sample-${Date.now()}.pdf`;
                                       const url = await uploadFileToStorage(f, dest);
                                       setSamplePdfUrlState(url);
+                                      setSamplePages([]); // Clear any dummy/sample images when PDF is uploaded
                                     } catch (err: any) {
                                       console.error('Sample PDF upload failed:', err);
                                       setFeedback({
@@ -2635,7 +2636,12 @@ export default function ProductManager({
                                 type="text" 
                                 placeholder="Or enter direct PDF URL / file path..." 
                                 value={samplePdfUrlState === 'enabled' ? '' : samplePdfUrlState}
-                                onChange={(e) => setSamplePdfUrlState(e.target.value)}
+                                onChange={(e) => {
+                                  setSamplePdfUrlState(e.target.value);
+                                  if (e.target.value.trim()) {
+                                    setSamplePages([]); // Clear any dummy image pages when PDF is specified
+                                  }
+                                }}
                                 className="flex-1 min-w-[200px] px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono"
                               />
                             </div>
