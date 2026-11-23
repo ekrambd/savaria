@@ -85,6 +85,7 @@ export const getSafeProductImage = (rawImg?: any, _indexOrSeed?: number | string
     trimmed.includes('photo-1544716278-ca5e3f4abd8c') ||
     trimmed.includes('/watch.jpg') ||
     trimmed.includes('/book.png') ||
+    trimmed.includes('file-1794560404632-119910379') ||
     trimmed === 'undefined' ||
     trimmed === 'null'
   ) {
@@ -2259,9 +2260,20 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
   const currentProductImages = useMemo(() => {
     if (!activeProductDetail) return [DEFAULT_PRODUCT_FALLBACK_IMAGE];
-    return activeProductDetail.additionalImages && activeProductDetail.additionalImages.length > 0
-      ? activeProductDetail.additionalImages
-      : [activeProductDetail.coverImage || DEFAULT_PRODUCT_FALLBACK_IMAGE];
+    const rawImages = [
+      activeProductDetail.coverImage,
+      activeProductDetail.image,
+      ...(activeProductDetail.additionalImages || []),
+      ...(activeProductDetail.images || [])
+    ];
+    // Filter out duplicates and fallback/dummy images
+    const valid = rawImages
+      .filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
+      .map(img => getSafeProductImage(img))
+      .filter(img => img && img !== DEFAULT_STORE_FALLBACK_IMAGE && img !== DEFAULT_PRODUCT_FALLBACK_IMAGE);
+
+    const uniqueImages = Array.from(new Set(valid));
+    return uniqueImages.length > 0 ? uniqueImages : [getSafeProductImage(activeProductDetail.coverImage || activeProductDetail.image)];
   }, [activeProductDetail]);
 
   return (

@@ -45,7 +45,14 @@ export function loadProductsFromDisk(): Product[] {
   }
 
   return list.map(p => {
-    const img = p.image || p.coverImage || (p.images && p.images[0]) || '';
+    const dummyBanner = '/uploads/file-1794560404632-119910379.jpg';
+    let cleanImages = Array.isArray(p.images) ? p.images.filter(img => img !== dummyBanner) : [];
+    let cleanAdditional = Array.isArray(p.additionalImages) ? p.additionalImages.filter(img => img !== dummyBanner) : [];
+    let rawImg = p.image || p.coverImage || cleanImages[0] || '';
+    if (rawImg === dummyBanner) {
+      rawImg = cleanImages.find(img => img !== dummyBanner) || '';
+    }
+    const img = rawImg;
     const stockNum = typeof p.stock === 'number' ? p.stock : (typeof p.stockQuantity === 'number' ? p.stockQuantity : 0);
     return {
       ...p,
@@ -57,7 +64,9 @@ export function loadProductsFromDisk(): Product[] {
       brand: p.brand || 'Store',
       brandId: p.brandId || 'brand-default',
       image: img,
-      coverImage: p.coverImage || img,
+      coverImage: p.coverImage && p.coverImage !== dummyBanner ? p.coverImage : img,
+      images: cleanImages.length > 0 ? cleanImages : (img ? [img] : []),
+      additionalImages: cleanAdditional,
       stock: stockNum,
       stockQuantity: stockNum,
       isAvailable: p.isAvailable !== false,
