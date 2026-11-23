@@ -382,11 +382,11 @@ export default function SliderManager() {
               <Layout className="h-5 w-5" />
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-slate-900">
-              Homepage slider and video banner (Hero Banners & Videos)
+              Homepage Banners (Image & Video)
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            See Slider List, New picture or uTUb/Video banner add And click action determine
+            Upload and manage clean banner images or video banners for your homepage.
           </p>
         </div>
 
@@ -396,402 +396,8 @@ export default function SliderManager() {
           className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 hover:opacity-90 text-white rounded-xl text-xs font-bold shadow-md transition-all hover:shadow-lg cursor-pointer gap-1.5" style={{ backgroundColor: primaryColor }}
         >
           <Plus className="h-4 w-4" />
-          Add new slides/videos
+          Add New Banner (Image / Video)
         </button>
-      </div>
-
-      {/* Slider & Video Timing Control Card */}
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
-              <Clock className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm">
-                Slider & Video Autoplay Timing (স্লাইডার পরিবর্তনের সময়কাল)
-              </h3>
-              <p className="text-xs text-slate-500">
-                ভিডিও ও ইমেজ স্লাইডার কতক্ষণ পর স্বয়ংক্রিয়ভাবে পরবর্তী স্লাইডে যাবে নির্ধারণ করুন
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => handleSaveAll()}
-            disabled={isSaving}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {isSaving ? 'সংরক্ষণ হচ্ছে...' : 'Save Timing'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Video Slide Change Interval */}
-          <div className="p-4 bg-rose-50/50 border border-rose-200/80 rounded-xl space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                <Video className="w-4 h-4 text-rose-600" />
-                <span>Video Slide Interval (ভিডিও পরিবর্তনের সময়):</span>
-              </label>
-              <span className="text-xs font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md">
-                {settings.heroVideoInterval || 10} সেকেন্ড
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-600">
-              ভিডিও ব্যানার কত সেকেন্ড প্লে হওয়ার পর পরবর্তী স্লাইডে যাবে (Slow for video)
-            </p>
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              {[8, 10, 12, 15, 20, 25, 30].map((sec) => (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => setSettings(prev => ({ ...prev, heroVideoInterval: sec }))}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
-                    (settings.heroVideoInterval || 10) === sec
-                      ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {sec}s
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Image Slide Change Interval */}
-          <div className="p-4 bg-indigo-50/50 border border-indigo-200/80 rounded-xl space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-indigo-600" />
-                <span>Image Slide Interval (ছবির পরিবর্তনের সময়):</span>
-              </label>
-              <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md">
-                {settings.heroSliderInterval || 5} সেকেন্ড
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-600">
-              ছবি ব্যানার কত সেকেন্ড পর পরবর্তী স্লাইডে যাবে
-            </p>
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              {[4, 5, 6, 8, 10].map((sec) => (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => setSettings(prev => ({ ...prev, heroSliderInterval: sec }))}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
-                    (settings.heroSliderInterval || 5) === sec
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {sec}s
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================================
-          DYNAMIC OFFER STRIP / PROMO BANNER (Matching ASMI/Shopping Zone BD)
-          ============================================================ */}
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
-                <span>Homepage Offer Strip / Promo Banner (ডায়নামিক অফার স্ট্রিপ)</span>
-                {promoStrip.enabled !== false ? (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                    Active
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
-                    Disabled
-                  </span>
-                )}
-              </h3>
-              <p className="text-xs text-slate-500">
-                স্লাইডারের নিচে দেখানো অফার ব্যানার, টেক্সট, বাটন ও লিংক পরিবর্তন বা চালু/বন্ধ করুন
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSavePromoStrip}
-            disabled={isSavingPromo}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#166534] hover:bg-[#14532d] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {isSavingPromo ? 'সংরক্ষণ হচ্ছে...' : 'Save Offer Strip'}
-          </button>
-        </div>
-
-        {/* Live Storefront Preview */}
-        <div className="space-y-2">
-          <label className="font-bold text-slate-700 text-xs block">
-            Live Storefront Preview (ওয়েবসাইটে যেমন দেখাবে):
-          </label>
-          {promoStrip.enabled !== false ? (
-            <div 
-              className="rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs transition-all"
-              style={{ 
-                backgroundColor: promoStrip.bgColor || '#e9f5ee', 
-                borderColor: promoStrip.borderColor || '#c6e4d2', 
-                borderWidth: '1px', 
-                borderStyle: 'solid' 
-              }}
-            >
-              <div className="flex items-center gap-3.5 sm:gap-4 w-full md:w-auto">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-xs border border-emerald-100 flex items-center justify-center p-2 shrink-0 overflow-hidden">
-                  {promoStrip.iconUrl ? (
-                    <img 
-                      src={promoStrip.iconUrl} 
-                      alt="Store Logo" 
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="text-center">
-                      <span className="text-[#2563eb] font-black text-lg sm:text-xl tracking-tight">
-                        {promoStrip.iconText || 'MB'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {promoStrip.badge && (
-                    <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#166534] block">
-                      {promoStrip.badge}
-                    </span>
-                  )}
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug mt-0.5">
-                    {promoStrip.title || 'Exclusive Trendy Salwar Kameez, Saree & Pakistani Suits at Best Prices.'}
-                  </h3>
-                </div>
-              </div>
-              <div
-                style={{ backgroundColor: promoStrip.buttonColor || '#166534' }}
-                className="w-full md:w-auto shrink-0 px-6 py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs"
-              >
-                <span>{promoStrip.buttonText || 'Shop Collection'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500 bg-slate-50">
-              অফার স্ট্রিপটি বর্তমানে ওয়েবসাইটে বন্ধ (Disabled) করা আছে। চালু করতে নিচের বাটনে ক্লিক করুন।
-            </div>
-          )}
-        </div>
-
-        {/* Controls Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          {/* Enable Toggle */}
-          <div className="col-span-1 md:col-span-2 flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
-            <div>
-              <span className="font-bold text-slate-900 text-xs block">
-                Enable Offer Strip (হোমপেজে অফার স্ট্রিপ প্রদর্শন করুন)
-              </span>
-              <span className="text-[11px] text-slate-500 block">
-                স্লাইডারের নিচে অফার ব্যানার দেখাতে এটি চালু রাখুন
-              </span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox"
-                checked={promoStrip.enabled !== false}
-                onChange={(e) => setPromoStrip(prev => ({ ...prev, enabled: e.target.checked }))}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#166534]"></div>
-            </label>
-          </div>
-
-          {/* Badge / Tag text */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-700 text-xs flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Offer Badge / Tag (ছোট হেডলাইন/ট্যাগ):</span>
-            </label>
-            <input 
-              type="text"
-              value={promoStrip.badge || ''}
-              onChange={(e) => setPromoStrip(prev => ({ ...prev, badge: e.target.value }))}
-              placeholder="e.g. SPECIAL FESTIVE OFFER 🌸 or YOUR DAILY BAZAR MADE EASIER!"
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-            />
-          </div>
-
-          {/* Button Text */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-700 text-xs">
-              Button Text (বাটন টেক্সট):
-            </label>
-            <input 
-              type="text"
-              value={promoStrip.buttonText || ''}
-              onChange={(e) => setPromoStrip(prev => ({ ...prev, buttonText: e.target.value }))}
-              placeholder="e.g. Shop Collection or Explore asmishop.com"
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-            />
-          </div>
-
-          {/* Main Title / Description */}
-          <div className="col-span-1 md:col-span-2 space-y-1.5">
-            <label className="font-bold text-slate-700 text-xs">
-              Offer Description (মূল অফার ও বিবরণ):
-            </label>
-            <textarea 
-              rows={2}
-              value={promoStrip.title || ''}
-              onChange={(e) => setPromoStrip(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="e.g. Exclusive Trendy Salwar Kameez, Saree & Pakistani Suits at Best Prices with Home Delivery Across Bangladesh."
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-none"
-            />
-          </div>
-
-          {/* Button Link */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-700 text-xs">
-              Button Link (বাটন লিংক বা পেজ):
-            </label>
-            <input 
-              type="text"
-              value={promoStrip.buttonLink || ''}
-              onChange={(e) => setPromoStrip(prev => ({ ...prev, buttonLink: e.target.value }))}
-              placeholder="e.g. /shop or https://..."
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-            />
-          </div>
-
-          {/* Icon Text */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-700 text-xs">
-              Icon Text Initials (লোগো না থাকলে টেক্সট):
-            </label>
-            <input 
-              type="text"
-              value={promoStrip.iconText || ''}
-              onChange={(e) => setPromoStrip(prev => ({ ...prev, iconText: e.target.value }))}
-              placeholder="e.g. MB or A.SMI"
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-            />
-          </div>
-
-          {/* Icon / Image URL */}
-          <div className="col-span-1 md:col-span-2 space-y-1.5">
-            <label className="font-bold text-slate-700 text-xs flex items-center justify-between">
-              <span>Icon / Logo Image URL (কাস্টম লোগো বা ছবির URL):</span>
-              <button
-                type="button"
-                onClick={() => setPromoStrip(prev => ({ ...prev, iconUrl: '/images/meghbristi-brand-logo.svg' }))}
-                className="text-[11px] text-emerald-600 hover:underline font-semibold cursor-pointer"
-              >
-                Use Store Logo
-              </button>
-            </label>
-            <input 
-              type="text"
-              value={promoStrip.iconUrl || ''}
-              onChange={(e) => setPromoStrip(prev => ({ ...prev, iconUrl: e.target.value }))}
-              placeholder="e.g. /images/meghbristi-brand-logo.svg or /uploads/..."
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-            />
-          </div>
-
-          {/* Color Themes */}
-          <div className="col-span-1 md:col-span-2 p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
-            <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Theme Colors (কালার থিম):</span>
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Background Color */}
-              <div className="flex items-center gap-2">
-                <input 
-                  type="color"
-                  value={promoStrip.bgColor || '#e9f5ee'}
-                  onChange={(e) => setPromoStrip(prev => ({ ...prev, bgColor: e.target.value }))}
-                  className="w-8 h-8 rounded-lg cursor-pointer border-0"
-                />
-                <div>
-                  <span className="text-[11px] font-bold text-slate-700 block">Background</span>
-                  <span className="text-[10px] text-slate-500 uppercase">{promoStrip.bgColor || '#e9f5ee'}</span>
-                </div>
-              </div>
-
-              {/* Border Color */}
-              <div className="flex items-center gap-2">
-                <input 
-                  type="color"
-                  value={promoStrip.borderColor || '#c6e4d2'}
-                  onChange={(e) => setPromoStrip(prev => ({ ...prev, borderColor: e.target.value }))}
-                  className="w-8 h-8 rounded-lg cursor-pointer border-0"
-                />
-                <div>
-                  <span className="text-[11px] font-bold text-slate-700 block">Border</span>
-                  <span className="text-[10px] text-slate-500 uppercase">{promoStrip.borderColor || '#c6e4d2'}</span>
-                </div>
-              </div>
-
-              {/* Button Color */}
-              <div className="flex items-center gap-2">
-                <input 
-                  type="color"
-                  value={promoStrip.buttonColor || '#166534'}
-                  onChange={(e) => setPromoStrip(prev => ({ ...prev, buttonColor: e.target.value }))}
-                  className="w-8 h-8 rounded-lg cursor-pointer border-0"
-                />
-                <div>
-                  <span className="text-[11px] font-bold text-slate-700 block">Button</span>
-                  <span className="text-[10px] text-slate-500 uppercase">{promoStrip.buttonColor || '#166534'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Preset Buttons */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/60">
-              <span className="text-[11px] text-slate-500">Quick Presets:</span>
-              <button
-                type="button"
-                onClick={() => setPromoStrip(prev => ({ ...prev, bgColor: '#e9f5ee', borderColor: '#c6e4d2', buttonColor: '#166534' }))}
-                className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#e9f5ee] text-[#166534] border border-[#c6e4d2] cursor-pointer"
-              >
-                Soft Mint Green
-              </button>
-              <button
-                type="button"
-                onClick={() => setPromoStrip(prev => ({ ...prev, bgColor: '#fef3c7', borderColor: '#fde68a', buttonColor: '#d97706' }))}
-                className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer"
-              >
-                Festive Amber
-              </button>
-              <button
-                type="button"
-                onClick={() => setPromoStrip(prev => ({ ...prev, bgColor: '#f3e8ff', borderColor: '#e9d5ff', buttonColor: '#7e22ce' }))}
-                className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300 cursor-pointer"
-              >
-                Royal Purple
-              </button>
-              <button
-                type="button"
-                onClick={() => setPromoStrip(prev => ({ ...prev, bgColor: '#ffffff', borderColor: '#e2e8f0', buttonColor: '#0f172a' }))}
-                className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-slate-900 border border-slate-300 cursor-pointer"
-              >
-                Minimal Slate
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Slider List */}
@@ -859,7 +465,7 @@ export default function SliderManager() {
                         {isVideo ? (
                           <span className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                             <Video className="h-3 w-3" />
-                            {banner.videoType === 'youtube'? 'YouTube video' : 'video file'}
+                            {banner.videoType === 'youtube' ? 'YouTube video' : 'Video file'}
                           </span>
                         ) : (
                           <span className="bg-sky-100 text-sky-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
@@ -867,38 +473,17 @@ export default function SliderManager() {
                             Image banner
                           </span>
                         )}
-
-                        {/* Slide Duration Badge */}
-                        <span className="bg-slate-200/90 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-slate-500" />
-                          {banner.durationSeconds
-                            ? `${banner.durationSeconds}s`
-                            : isVideo
-                              ? `${settings.heroVideoInterval || 10}s`
-                              : `${settings.heroSliderInterval || 5}s`}
-                        </span>
-
-                        {banner.badge && (
-                          <span className="bg-indigo-100 text-indigo-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                            {banner.badge}
-                          </span>
-                        )}
-                        {banner.discountText && (
-                          <span className="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                            {banner.discountText}
-                          </span>
-                        )}
                       </div>
 
                       <h4 className="font-bold text-slate-900 text-sm truncate group-hover:text-indigo-600 transition-colors">
-                        {banner.title?.trim() || (isVideo ? `Video banner #${index + 1}` : `picture banner #${index + 1}`)}
+                        {banner.title?.trim() || (isVideo ? `Video banner #${index + 1}` : `Image banner #${index + 1}`)}
                       </h4>
 
                       {banner.subtitle?.trim() ? (
                         <p className="text-xs text-slate-500 truncate">{banner.subtitle}</p>
-                      ) : banner.imageOnly || (!banner.title?.trim() && !banner.badge?.trim()) ? (
-                        <p className="text-[11px] text-slate-400 italic">Pure Media</p>
-                      ) : null}
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic">Pure Media Banner</p>
+                      )}
 
                       <div className="pt-1 flex items-center gap-2 text-[11px] font-semibold text-slate-600">
                         {banner.actionType === 'product' || banner.productId ? (
@@ -1502,66 +1087,6 @@ export default function SliderManager() {
               </div>
             </>
           )}
-
-              {/* 5. SLIDE CHANGE INTERVAL (Customizable Duration in Seconds) */}
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-indigo-600" />
-                    <span>Slide Change Interval (স্লাইড পরিবর্তনের সময়কাল)</span>
-                  </label>
-                  <span className="text-[11px] text-slate-500 font-medium">
-                    {editingBanner.mediaType === 'video' ? 'ভিডিওর জন্য রিকমেন্ডেড: ১০-২০ সেকেন্ড' : 'ছবির জন্য রিকমেন্ডেড: ৫-৮ সেকেন্ড'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  {editingBanner.mediaType === 'video'
-                    ? 'এই ভিডিও স্লাইডটি কত সেকেন্ড প্লে হওয়ার পর স্বয়ংক্রিয়ভাবে পরবর্তী স্লাইডে যাবে নির্ধারণ করুন।'
-                    : 'এই ইমেজ স্লাইডটি কত সেকেন্ড প্রদর্শিত হওয়ার পর পরবর্তী স্লাইডে যাবে নির্ধারণ করুন।'}
-                </p>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-xl px-3 py-1.5">
-                    <input
-                      type="number"
-                      min={3}
-                      max={120}
-                      placeholder={editingBanner.mediaType === 'video' ? String(settings.heroVideoInterval || 10) : String(settings.heroSliderInterval || 5)}
-                      value={editingBanner.durationSeconds || ''}
-                      onChange={(e) => setEditingBanner({
-                        ...editingBanner,
-                        durationSeconds: e.target.value ? Math.max(2, parseInt(e.target.value) || 0) : undefined
-                      })}
-                      className="w-16 font-bold text-xs text-slate-900 outline-none"
-                    />
-                    <span className="text-xs text-slate-500 font-semibold">সেকেন্ড</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {(editingBanner.mediaType === 'video' ? [8, 10, 12, 15, 20, 30] : [4, 5, 6, 8, 10]).map(sec => (
-                      <button
-                        key={sec}
-                        type="button"
-                        onClick={() => setEditingBanner({ ...editingBanner, durationSeconds: sec })}
-                        className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition cursor-pointer ${
-                          editingBanner.durationSeconds === sec
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        {sec}s
-                      </button>
-                    ))}
-                    {editingBanner.durationSeconds !== undefined && (
-                      <button
-                        type="button"
-                        onClick={() => setEditingBanner({ ...editingBanner, durationSeconds: undefined })}
-                        className="text-[11px] text-rose-600 hover:underline font-semibold ml-1 cursor-pointer"
-                      >
-                        Reset Default
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Modal Footer */}

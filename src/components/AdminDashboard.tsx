@@ -355,7 +355,7 @@ export default function AdminDashboard({ adminEmail, onLogout }: AdminDashboardP
     { id: 'flash_sale' as const, label: 'Flash Sale', icon: Zap },
     { id: 'collections' as const, label: 'Collections', icon: Sparkles },
     { id: 'landing_setup' as const, label: 'Landing Pages', icon: Globe },
-    { id: 'slider_management' as const, label: 'Sliders & Offer Strip', icon: Layout },
+    { id: 'slider_management' as const, label: 'Banners (Image & Video)', icon: Layout },
 
     // --- Group 5: Settings & Setup ---
     { id: 'header_settings' as any, isHeader: true, label: 'Settings' },
