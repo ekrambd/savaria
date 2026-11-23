@@ -2719,19 +2719,23 @@ export default function ProductManager({
                             </label>
 
                             {samplePages.length > 0 && (
-                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-2">
-                                {samplePages.map((url, sIdx) => (
-                                  <div key={sIdx} className="relative group aspect-[3/4] rounded-lg overflow-hidden border border-slate-200 bg-white">
-                                    <img src={url} alt={`Sample page ${sIdx + 1}`} className="w-full h-full object-cover" />
-                                    <button
-                                      type="button"
-                                      onClick={() => setSamplePages(prev => prev.filter((_, idx) => idx !== sIdx))}
-                                      className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-rose-600 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </button>
-                                  </div>
-                                ))}
+                              <div className="space-y-1.5 pt-2">
+                                <p className="text-[11px] font-bold text-slate-600">Sample Page Thumbnails ({samplePages.length}):</p>
+                                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                  {samplePages.map((url, sIdx) => (
+                                    <div key={sIdx} className="relative group aspect-[3/4] rounded-lg overflow-hidden border border-slate-300 shadow-xs bg-slate-50">
+                                      <img src={url} alt={`Sample page ${sIdx + 1}`} className="w-full h-full object-cover" />
+                                      <button
+                                        type="button"
+                                        onClick={() => setSamplePages(prev => prev.filter((_, idx) => idx !== sIdx))}
+                                        className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition shadow-xs cursor-pointer"
+                                        title="Delete sample page"
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
