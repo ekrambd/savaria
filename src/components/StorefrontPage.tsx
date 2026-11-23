@@ -3110,12 +3110,12 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                 {/* Button 3 (Bottom Left): 💬 WhatsApp / Helpline (Dynamic from Store Profile) */}
                 {(() => {
-                  const rawWa = socialLinks?.whatsapp || liveHeaderSettings?.socialLinks?.whatsapp || headerPhone || displayPhone || '01635311494';
+                  const rawWa = socialLinks?.whatsapp || liveHeaderSettings?.socialLinks?.whatsapp || headerPhone || displayPhone || '01995996313';
                   const cleanWa = rawWa.replace(/[^0-9]/g, '');
                   const formattedWa = cleanWa.startsWith('880') ? cleanWa.slice(2) : cleanWa;
                   const displayWaNumber = formattedWa.length === 11 
                     ? `${formattedWa.slice(0, 5)}-${formattedWa.slice(5)}` 
-                    : rawWa;
+                    : (headerPhone || displayPhone || rawWa);
 
                   return (
                     <a 
@@ -3132,7 +3132,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                 {/* Button 4 (Bottom Right): 📞 Call For Order (Dynamic from Store Profile) */}
                 <a 
-                  href={`tel:${headerPhone || displayPhone || '01635311494'}`}
+                  href={`tel:${headerPhone || displayPhone || '01995996313'}`}
                   className="w-full bg-[#eff6ff] hover:bg-[#dbeafe] border border-[#bfdbfe] text-blue-700 font-bold py-2.5 px-4 rounded-lg text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                 >
                   <Phone className="w-4 h-4 text-blue-600 shrink-0" />
@@ -6347,7 +6347,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           <PdfSampleReader
             isOpen={isPdfReaderOpen}
             onClose={() => setIsPdfReaderOpen(false)}
-            pdfUrl={activeProductDetail.samplePdfUrl}
+            pdfUrl={activeProductDetail.samplePdfUrl || (activeProductDetail as any).pdfUrl}
             samplePages={activeProductDetail.samplePages || []}
             productTitle={activeProductDetail.title}
           />
