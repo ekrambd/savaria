@@ -4109,7 +4109,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                     {banners.map((item: any, idx: number) => {
                       const img = item.imageUrl || item.image || (shoppingCategories[idx]?.image) || DEFAULT_STORE_FALLBACK_IMAGE;
-                      const title = item.title || (shoppingCategories[idx]?.name) || ;
+                      const title = item.title || (shoppingCategories[idx]?.name) || `Collection ${idx + 1}`;
                       const targetCat = item.category || (shoppingCategories[idx]?.rawName || shoppingCategories[idx]?.name || 'All');
 
                       return (
