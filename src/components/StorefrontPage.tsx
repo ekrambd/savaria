@@ -2334,7 +2334,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             </button>
             {(realCategoryItems && realCategoryItems.length > 0 ? realCategoryItems : (
               Array.from(new Set((products || []).map(p => p.category?.trim()).filter(Boolean) as string[])).map((c, idx) => ({
-                id: ,
+                id: `cat-${idx}`,
                 name: c,
                 order: idx,
                 subcategories: []
