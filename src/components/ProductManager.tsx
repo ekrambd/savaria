@@ -169,7 +169,7 @@ export default function ProductManager({
           }));
         }
 
-        // Also incorporate any distinct categories from existing products (e.g. "Book / Publication")
+        // Also incorporate any distinct categories from existing products
         const existingCatNames = new Set(loadedCats.map(c => c.name.toLowerCase().trim()));
         if (products && products.length > 0) {
           products.forEach((p, idx) => {
@@ -183,16 +183,6 @@ export default function ProductManager({
                 subcategories: []
               });
             }
-          });
-        }
-
-        // Always guarantee 'Book / Publication' is available as a category option
-        if (!existingCatNames.has('book / publication')) {
-          loadedCats.push({
-            id: 'cat-book-publication',
-            name: 'Book / Publication',
-            order: loadedCats.length,
-            subcategories: []
           });
         }
 

@@ -2896,7 +2896,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               </div>
 
               {/* PDF Sample Reader Button (High-Speed Protected Reading Viewer) */}
-              {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) || activeProductDetail.category === 'Book / Publication' || (activeProductDetail as any).pdfUrl) && (
+              {(activeProductDetail.samplePdfUrl || (activeProductDetail.samplePages && activeProductDetail.samplePages.length > 0) || activeProductDetail.productType === 'Book / Publication' || activeProductDetail.category === 'Book' || activeProductDetail.category === 'Book / Publication' || (activeProductDetail as any).pdfUrl) && (
                 <div className="pt-2">
                   <button
                     type="button"
