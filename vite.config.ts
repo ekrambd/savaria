@@ -3,10 +3,13 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
     root: __dirname,
     plugins: [react(), tailwindcss()],
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
