@@ -725,14 +725,7 @@ export const DEFAULT_ECOM_SETTINGS: EcomSettings = {
   nagadNumber: '01635311494',
   paymentGateways: DEFAULT_PAYMENT_GATEWAYS,
   deliveryMethods: DEFAULT_DELIVERY_METHODS,
-  categories: [
-    'Salwar Kameez',
-    'Pakistani Suits',
-    'Designer Saree',
-    'Kurti & Tops',
-    'Kids Wear',
-    'Mens Panjabi'
-  ],
+  categories: [],
   heroBanners: [
     {
       id: 'hero-1',
