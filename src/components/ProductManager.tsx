@@ -2641,24 +2641,40 @@ export default function ProductManager({
                             </div>
 
                             {samplePdfUrlState && samplePdfUrlState !== 'enabled' && (
-                              <div className="flex items-center justify-between p-3 bg-white border border-emerald-200 rounded-xl mt-2">
-                                <div className="flex items-center gap-2.5">
-                                  <FileText className="h-5 w-5 text-emerald-600" />
-                                  <div>
-                                    <p className="text-[11px] font-bold text-slate-800">Sample PDF Attached</p>
-                                    <button 
-                                      type="button" 
-                                      onClick={() => setPreviewPdfUrl(samplePdfUrlState)} 
-                                      className="text-[10px] text-emerald-600 hover:text-emerald-700 hover:underline font-bold cursor-pointer"
-                                    >
-                                      Preview PDF ↗
-                                    </button>
+                              <div className="flex items-center justify-between p-3.5 bg-emerald-50/70 border border-emerald-300 rounded-xl mt-2.5">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="p-2 bg-emerald-100 rounded-lg text-emerald-700 shrink-0">
+                                    <FileText className="h-5 w-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-slate-800 truncate">
+                                      {samplePdfUrlState.split('/').pop() || 'Sample PDF Document'}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-0.5">
+                                      <button 
+                                        type="button" 
+                                        onClick={() => setPreviewPdfUrl(samplePdfUrlState)} 
+                                        className="text-xs text-emerald-700 hover:text-emerald-900 font-bold underline cursor-pointer flex items-center gap-1"
+                                      >
+                                        <span>Preview PDF Modal</span>
+                                      </button>
+                                      <span className="text-slate-300">•</span>
+                                      <a
+                                        href={samplePdfUrlState}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-teal-600 hover:text-teal-800 font-semibold cursor-pointer"
+                                      >
+                                        Open in New Tab ↗
+                                      </a>
+                                    </div>
                                   </div>
                                 </div>
                                 <button 
                                   type="button" 
                                   onClick={() => setSamplePdfUrlState('')} 
-                                  className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                                  className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition cursor-pointer shrink-0 ml-2"
+                                  title="Remove PDF"
                                 >
                                   <X className="h-4 w-4" />
                                 </button>
@@ -3796,51 +3812,49 @@ export default function ProductManager({
           </div>
         </div>
       )}
-      {/* PDF Preview Full-Width Modal */}
+      {/* PDF Preview Full-Width Modal (z-[100] above all parent dialogs) */}
       {previewPdfUrl && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-white">
-          <div className="flex items-center justify-between p-4 border-b border-slate-200 shadow-sm bg-white">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-teal-600" />
-              <span>PDF preview</span>
-            </h3>
+        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-900/95 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="flex items-center justify-between p-4 bg-white border-b border-slate-200 shadow-sm shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base">
+                  PDF Preview: {previewPdfUrl.split('/').pop()}
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Protected Document Viewer
+                </p>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <a
                 href={previewPdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-1.5 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition"
+                className="px-3.5 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl border border-teal-200 transition cursor-pointer flex items-center gap-1.5"
               >
-                Open in new tab ↗
+                <span>Open in new tab</span>
+                <span>↗</span>
               </a>
               <button 
                 type="button" 
                 onClick={() => setPreviewPdfUrl(null)}
-                className="p-2 bg-rose-50 text-rose-600 rounded-full hover:bg-rose-100 transition-colors cursor-pointer"
+                className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors cursor-pointer"
+                title="Close"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
           </div>
-          <div className="flex-1 w-full bg-slate-100 relative">
-            <object 
-              data={previewPdfUrl} 
-              type="application/pdf"
-              className="w-full h-full border-none"
-            >
-              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                <FileText className="h-16 w-16 text-slate-400 mb-3" />
-                <p className="text-sm font-bold text-slate-700 mb-2">PDF প্রিভিউ সরাসরি লোড হতে পারেনি</p>
-                <a 
-                  href={previewPdfUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-teal-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-teal-700"
-                >
-                  ব্রাউজারে নতুন ট্যাবে দেখুন
-                </a>
-              </div>
-            </object>
+          <div className="flex-1 w-full bg-slate-950 p-2 sm:p-4 flex items-center justify-center overflow-hidden">
+            <iframe 
+              src={previewPdfUrl.startsWith('http') ? previewPdfUrl : `${window.location.origin}${previewPdfUrl}`} 
+              className="w-full h-full max-w-5xl rounded-xl shadow-2xl border border-slate-800 bg-white"
+              title="PDF Preview"
+            />
           </div>
         </div>
       )}
