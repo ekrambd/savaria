@@ -14,13 +14,16 @@ import {
   Plus, 
   Sparkles, 
   Check, 
-  AlertCircle,
-  FileText,
+  Edit,
+  X,
   BookOpen,
-  Eye
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { MediaQrItem } from '../types';
 import { dbService, getAdminAuthHeaders } from '../lib/dbService';
+
+const ITEMS_PER_PAGE = 15;
 
 export const MediaQrManager: React.FC = () => {
   const [items, setItems] = useState<MediaQrItem[]>([]);
@@ -29,6 +32,12 @@ export const MediaQrManager: React.FC = () => {
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Edit Mode State
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -79,13 +88,12 @@ export const MediaQrManager: React.FC = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Simple progress simulation
       const interval = setInterval(() => {
         setUploadProgress(prev => (prev < 90 ? prev + 15 : prev));
       }, 300);
 
       const authHeaders = getAdminAuthHeaders();
-      delete (authHeaders as any)['Content-Type']; // Let browser set multipart boundary
+      delete (authHeaders as any)['Content-Type'];
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -102,7 +110,6 @@ export const MediaQrManager: React.FC = () => {
       const fileUrl = data.url || (data.filename ? `/uploads/${data.filename}` : '');
       setMediaUrl(fileUrl);
       
-      // Auto-detect type
       if (file.type.startsWith('video/')) {
         setMediaType('video');
       } else if (file.type.startsWith('image/')) {
@@ -120,6 +127,29 @@ export const MediaQrManager: React.FC = () => {
     }
   };
 
+  const startEdit = (item: MediaQrItem) => {
+    setEditingId(item.id);
+    setTitle(item.title);
+    setBookTitle(item.bookTitle || 'হাতের লেখার বই');
+    setPageNumber(item.pageNumber || '');
+    setMediaType(item.mediaType as any || 'video');
+    setMediaUrl(item.youtubeUrl || item.fileUrl || '');
+    setCustomShortCode(item.shortCode);
+    setDescription(item.description || '');
+
+    // Scroll smoothly to form
+    window.scrollTo({ top: 100, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setTitle('');
+    setPageNumber('');
+    setMediaUrl('');
+    setCustomShortCode('');
+    setDescription('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -133,7 +163,7 @@ export const MediaQrManager: React.FC = () => {
 
     try {
       setSaving(true);
-      await dbService.saveMediaQrItem({
+      const payload: any = {
         title: title.trim(),
         bookTitle: bookTitle.trim() || undefined,
         pageNumber: pageNumber.trim() || undefined,
@@ -144,14 +174,16 @@ export const MediaQrManager: React.FC = () => {
         customShortCode: customShortCode.trim() || undefined,
         shortCode: customShortCode.trim() || undefined,
         description: description.trim() || undefined,
-      });
+      };
+
+      if (editingId) {
+        payload.id = editingId;
+      }
+
+      await dbService.saveMediaQrItem(payload);
 
       // Reset form
-      setTitle('');
-      setPageNumber('');
-      setMediaUrl('');
-      setCustomShortCode('');
-      setDescription('');
+      cancelEdit();
       await fetchItems();
     } catch (err: any) {
       alert('Failed to save QR media item: ' + (err.message || 'Error'));
@@ -165,6 +197,7 @@ export const MediaQrManager: React.FC = () => {
     try {
       await dbService.deleteMediaQrItem(id);
       setItems(prev => prev.filter(i => i.id !== id));
+      if (editingId === id) cancelEdit();
     } catch (err: any) {
       alert('Failed to delete item: ' + (err.message || 'Error'));
     }
@@ -199,7 +232,6 @@ export const MediaQrManager: React.FC = () => {
   const downloadHighResQr = (item: MediaQrItem) => {
     if (!qrDataUrl) return;
 
-    // Create a canvas with label underneath for high-quality printing on books
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -224,7 +256,7 @@ export const MediaQrManager: React.FC = () => {
       const label1 = item.bookTitle || 'Savaria BD Learning';
       ctx.fillText(label1, 325, 665);
 
-      ctx.fillStyle = '#16a34a'; // Green accent
+      ctx.fillStyle = '#16a34a';
       ctx.font = 'bold 22px sans-serif';
       const label2 = item.pageNumber ? `${item.pageNumber} • ${item.title}` : item.title;
       ctx.fillText(label2, 325, 705);
@@ -317,6 +349,12 @@ export const MediaQrManager: React.FC = () => {
     printWindow.document.close();
   };
 
+  // Pagination calculation
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE) || 1;
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+  const currentItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -328,7 +366,7 @@ export const MediaQrManager: React.FC = () => {
             <span className="bg-white/20 text-xs px-2.5 py-0.5 rounded-full font-semibold">হাতের লেখার বই</span>
           </div>
           <p className="text-emerald-100 text-sm max-w-2xl leading-relaxed">
-            বইয়ের পাতার জন্য ভিডিও/ছবি আপলোড করে সরাসরি স্থায়ী QR কোড তৈরি ও প্রিন্ট করুন। মোবাইল ক্যামেরা বা স্ক্যানার দিয়ে স্ক্যান করলেই শিক্ষার্থী সরাসরি ভিডিও দেখতে পাবে।
+            বইয়ের পাতার জন্য ভিডিও/ছবি আপলোড করে স্থায়ী QR কোড তৈরি ও প্রিন্ট করুন। মোবাইল ক্যামেরা বা স্ক্যানার দিয়ে স্ক্যান করলেই শিক্ষার্থী সরাসরি ভিডিও দেখতে পাবে।
           </p>
         </div>
         <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20 text-center min-w-[140px]">
@@ -338,14 +376,32 @@ export const MediaQrManager: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Creation Form */}
+        {/* Creation & Edit Form */}
         <div className="lg:col-span-5 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-emerald-600" />
-              নতুন QR কোড তৈরি করুন
+              {editingId ? (
+                <>
+                  <Edit className="w-5 h-5 text-amber-600" />
+                  QR কোড এডিট করুন
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5 text-emerald-600" />
+                  নতুন QR কোড তৈরি করুন
+                </>
+              )}
             </h2>
-            <span className="text-xs text-gray-500">বইয়ের পাতার জন্য</span>
+            {editingId && (
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="text-xs text-gray-500 hover:text-rose-600 font-semibold flex items-center gap-1"
+              >
+                <X className="w-4 h-4" />
+                বাতিল করুন
+              </button>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -359,7 +415,7 @@ export const MediaQrManager: React.FC = () => {
                   type="text"
                   value={bookTitle}
                   onChange={e => setBookTitle(e.target.value)}
-                  placeholder="যেমন: হাতের লেখার বই"
+                  placeholder="হাতের লেখার বই"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -371,7 +427,7 @@ export const MediaQrManager: React.FC = () => {
                   type="text"
                   value={pageNumber}
                   onChange={e => setPageNumber(e.target.value)}
-                  placeholder="যেমন: পৃষ্ঠা ১ বা Page 1"
+                  placeholder="যেমন: ১ বা Page 1"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -502,14 +558,16 @@ export const MediaQrManager: React.FC = () => {
                 <label className="text-xs font-semibold text-gray-700">
                   শর্ট কোড (Custom Short Code - Optional)
                 </label>
-                <button
-                  type="button"
-                  onClick={handleGenerateShortCode}
-                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  অটো তৈরি
-                </button>
+                {!editingId && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateShortCode}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    অটো তৈরি
+                  </button>
+                )}
               </div>
               <div className="flex items-center">
                 <span className="px-2.5 py-2 text-xs text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg select-none">
@@ -548,128 +606,209 @@ export const MediaQrManager: React.FC = () => {
               className={`w-full py-3 px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all ${
                 saving || uploading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]'
+                  : editingId
+                    ? 'bg-amber-600 hover:bg-amber-700 active:scale-[0.99]'
+                    : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]'
               }`}
             >
               <QrCode className="w-4 h-4" />
-              {saving ? 'তৈরি হচ্ছে...' : 'QR কোড তৈরি করুন'}
+              {saving ? 'সংরক্ষণ হচ্ছে...' : editingId ? 'পরিবর্তন সংরক্ষণ করুন' : 'QR কোড তৈরি করুন'}
             </button>
           </form>
         </div>
 
-        {/* Existing QR Codes List */}
-        <div className="lg:col-span-7 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-emerald-600" />
-                বইয়ের সমস্ত QR কোডের তালিকা
-              </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                এখান থেকে যেকোনো QR কোড ডাউনলোড বা সরাসরি প্রিন্ট করে বইয়ে বসান
-              </p>
+        {/* Existing QR Codes List with Pagination */}
+        <div className="lg:col-span-7 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-emerald-600" />
+                  বইয়ের সমস্ত QR কোডের তালিকা ({items.length})
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  প্রতি পেজে {ITEMS_PER_PAGE} টি করে QR কোড প্রদর্শিত হচ্ছে
+                </p>
+              </div>
+              <button
+                onClick={fetchItems}
+                className="text-xs text-emerald-600 hover:underline font-semibold"
+              >
+                Refresh
+              </button>
             </div>
-            <button
-              onClick={fetchItems}
-              className="text-xs text-emerald-600 hover:underline font-semibold"
-            >
-              Refresh
-            </button>
+
+            {loading ? (
+              <div className="py-16 text-center text-gray-400">
+                <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-3" />
+                <p className="text-sm">লোড হচ্ছে...</p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="py-16 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <QrCode className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+                <p className="text-sm font-semibold text-gray-600">কোনো QR কোড এখনও তৈরি করা হয়নি</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  বামে ফর্ম পূরণ করে আপনার বইয়ের প্রথম ভিডিও ও QR কোড তৈরি করুন
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {currentItems.map((item, idx) => {
+                  const globalIndex = startIndex + idx + 1;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-4 rounded-xl border transition-all shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        editingId === item.id 
+                          ? 'bg-amber-50/70 border-amber-300' 
+                          : 'bg-gray-50/70 hover:bg-white border-gray-200 hover:shadow'
+                      }`}
+                    >
+                      {/* Left: Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="bg-slate-800 text-white text-[11px] font-bold px-2 py-0.5 rounded-md">
+                            #{globalIndex}
+                          </span>
+                          {item.bookTitle && (
+                            <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded">
+                              {item.bookTitle}
+                            </span>
+                          )}
+                          {item.pageNumber && (
+                            <span className="bg-blue-100 text-blue-800 text-[11px] font-bold px-2 py-0.5 rounded">
+                              পৃষ্ঠা {item.pageNumber}
+                            </span>
+                          )}
+                          <span className="text-[11px] font-medium text-gray-500 uppercase bg-gray-200/80 px-1.5 py-0.5 rounded">
+                            {item.mediaType}
+                          </span>
+                        </div>
+
+                        <h3 className="text-sm font-bold text-gray-900 truncate">
+                          {item.title}
+                        </h3>
+
+                        {/* Short link */}
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
+                          <span className="font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-emerald-700 font-semibold select-all">
+                            savariabd.com/v/{item.shortCode}
+                          </span>
+                          <button
+                            onClick={() => copyShareUrl(item.shortCode, item.id)}
+                            className="text-gray-500 hover:text-emerald-600 flex items-center gap-1 transition-colors"
+                            title="Copy Link"
+                          >
+                            {copiedId === item.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                            <span className="text-[11px]">{copiedId === item.id ? 'Copied' : 'Copy'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                        <button
+                          onClick={() => openQrModal(item)}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
+                          title="Download / Print QR"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          <span>QR</span>
+                        </button>
+
+                        <button
+                          onClick={() => startEdit(item)}
+                          className="p-2 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <a
+                          href={`/v/${item.shortCode}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Open Public Video Page"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+
+                        <button
+                          onClick={() => handleDelete(item.id, item.shortCode)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {loading ? (
-            <div className="py-16 text-center text-gray-400">
-              <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-3" />
-              <p className="text-sm">লোড হচ্ছে...</p>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="py-16 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <QrCode className="w-12 h-12 mx-auto text-gray-300 mb-2" />
-              <p className="text-sm font-semibold text-gray-600">কোনো QR কোড এখনও তৈরি করা হয়নি</p>
-              <p className="text-xs text-gray-400 mt-1">
-                বামে ফর্ম পূরণ করে আপনার বইয়ের প্রথম ভিডিও ও QR কোড তৈরি করুন
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-[680px] overflow-y-auto pr-1">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 bg-gray-50/70 hover:bg-white border border-gray-200 rounded-xl transition-all shadow-sm hover:shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+              <div className="text-xs text-gray-500">
+                দেখাচ্ছে {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, items.length)} (মোট {items.length} টি)
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage === 1}
+                  className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {/* Left: Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      {item.bookTitle && (
-                        <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded">
-                          {item.bookTitle}
-                        </span>
-                      )}
-                      {item.pageNumber && (
-                        <span className="bg-blue-100 text-blue-800 text-[11px] font-bold px-2 py-0.5 rounded">
-                          {item.pageNumber}
-                        </span>
-                      )}
-                      <span className="text-[11px] font-medium text-gray-500 uppercase bg-gray-200/80 px-1.5 py-0.5 rounded">
-                        {item.mediaType}
-                      </span>
-                    </div>
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
 
-                    <h3 className="text-sm font-bold text-gray-900 truncate">
-                      {item.title}
-                    </h3>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => {
+                  // Only show current, first, last, and immediate neighbours if many pages
+                  if (
+                    totalPages > 7 &&
+                    pg !== 1 &&
+                    pg !== totalPages &&
+                    Math.abs(pg - safeCurrentPage) > 2
+                  ) {
+                    if (Math.abs(pg - safeCurrentPage) === 3) {
+                      return <span key={pg} className="px-1 text-gray-400 text-xs">...</span>;
+                    }
+                    return null;
+                  }
 
-                    {/* Short link */}
-                    <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
-                      <span className="font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-emerald-700 font-semibold select-all">
-                        savariabd.com/v/{item.shortCode}
-                      </span>
-                      <button
-                        onClick={() => copyShareUrl(item.shortCode, item.id)}
-                        className="text-gray-500 hover:text-emerald-600 flex items-center gap-1 transition-colors"
-                        title="Copy Link"
-                      >
-                        {copiedId === item.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                        <span className="text-[11px]">{copiedId === item.id ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Right: Actions */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                  const isActive = pg === safeCurrentPage;
+                  return (
                     <button
-                      onClick={() => openQrModal(item)}
-                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                      title="Download / Print QR"
+                      key={pg}
+                      type="button"
+                      onClick={() => setCurrentPage(pg)}
+                      className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-bold transition-all ${
+                        isActive
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
                     >
-                      <QrCode className="w-3.5 h-3.5" />
-                      QR দেখুন
+                      {pg}
                     </button>
+                  );
+                })}
 
-                    <a
-                      href={`/v/${item.shortCode}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Open Public Video Page"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-
-                    <button
-                      onClick={() => handleDelete(item.id, item.shortCode)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
