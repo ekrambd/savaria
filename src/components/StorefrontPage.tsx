@@ -2726,7 +2726,11 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                 {/* Button 1 (Top Left): ⚡ Order Now */}
                 <button 
                   type="button"
-                  onClick={() => setIsFastCheckoutOpen(true)}
+                  onClick={() => {
+                    handleAddToCart(activeProductDetail, detailQuantity, activeVariant);
+                    setIsCartOpen(false);
+                    navigateTo('checkout');
+                  }}
                   className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-3 px-4 rounded-lg text-sm sm:text-base shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Zap className="w-4 h-4 fill-current shrink-0" />
@@ -2951,7 +2955,11 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             </div>
             <button
               type="button"
-              onClick={() => setIsFastCheckoutOpen(true)}
+              onClick={() => {
+                handleAddToCart(activeProductDetail, detailQuantity, activeVariant);
+                setIsCartOpen(false);
+                navigateTo('checkout');
+              }}
               className="flex-1 py-2.5 px-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
@@ -4229,7 +4237,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   No products available right now.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4.5">
                   {products.slice(0, 16).map((prod) => {
                     const imgSrc = prod.coverImage || prod.image || (prod.images && prod.images[0]) || DEFAULT_STORE_FALLBACK_IMAGE;
                     const hasDiscount = prod.regularPrice && prod.regularPrice > prod.price;
@@ -4238,38 +4246,71 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       <div
                         key={prod.id}
                         onClick={() => openProductDetail(prod)}
-                        className="group flex flex-col cursor-pointer bg-white rounded-xl border border-stone-200/80 hover:border-stone-400 transition-all p-2.5 sm:p-3 hover:shadow-md"
+                        className="group flex flex-col justify-between cursor-pointer bg-white rounded-lg border border-stone-200/90 hover:border-[#2563eb]/50 transition-all p-2 sm:p-2.5 hover:shadow-md select-none"
                       >
-                        {/* Clean Product Image Frame */}
-                        <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-50 rounded-lg mb-3">
-                          <img
-                            src={optimizeImageUrl(imgSrc, 500)}
-                            alt={prod.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                          />
-                          {hasDiscount && (
-                            <span className="absolute top-2 left-2 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase shadow-xs">
-                              SALE
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title & Price Below Image */}
-                        <div className="text-center px-1">
-                          <h3 className="text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-stone-600 transition-colors line-clamp-2 mb-1.5 leading-snug">
-                            {prod.title}
-                          </h3>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-xs sm:text-sm font-bold text-emerald-700">
-                              Tk {Number(prod.price).toLocaleString()} BDT
-                            </span>
+                        <div>
+                          {/* Standard Balanced Book Aspect Ratio Frame */}
+                          <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-50 rounded-md mb-2">
+                            <img
+                              src={optimizeImageUrl(imgSrc, 400)}
+                              alt={prod.title}
+                              loading="lazy"
+                              className="w-full h-full object-cover object-top group-hover:scale-103 transition-transform duration-300"
+                            />
                             {hasDiscount && (
-                              <span className="text-[11px] sm:text-xs text-stone-400 line-through">
-                                Tk {Number(prod.regularPrice).toLocaleString()} BDT
+                              <span className="absolute top-1.5 left-1.5 bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase shadow-xs">
+                                SALE
                               </span>
                             )}
                           </div>
+
+                          {/* Title & Price Below Image */}
+                          <div className="text-center px-0.5">
+                            <h3 className="text-xs sm:text-[13px] font-semibold text-stone-900 group-hover:text-[#2563eb] transition-colors line-clamp-2 mb-1 leading-snug min-h-[32px]">
+                              {prod.title}
+                            </h3>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className="text-xs sm:text-sm font-bold text-emerald-700">
+                                Tk {Number(prod.price).toLocaleString()}
+                              </span>
+                              {hasDiscount && (
+                                <span className="text-[10px] sm:text-xs text-stone-400 line-through">
+                                  Tk {Number(prod.regularPrice).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Direct Action Buttons: Add to Cart & Buy Now */}
+                        <div className="mt-2.5 pt-2 border-t border-stone-100 grid grid-cols-2 gap-1.5 w-full">
+                          <button 
+                            type="button"
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              handleAddToCart(prod); 
+                            }}
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-1.5 px-1 rounded text-[10px] sm:text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                            title="Add to Cart"
+                          >
+                            <ShoppingBag className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Add</span>
+                          </button>
+                          
+                          <button 
+                            type="button"
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              handleAddToCart(prod);
+                              setIsCartOpen(false);
+                              navigateTo('checkout');
+                            }}
+                            className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white py-1.5 px-1 rounded text-[10px] sm:text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                            title="Buy Now"
+                          >
+                            <Zap className="w-3 h-3 fill-current shrink-0" />
+                            <span className="truncate">Buy Now</span>
+                          </button>
                         </div>
                       </div>
                     );
