@@ -15,7 +15,7 @@ import { getProductSlug, slugifyProductText } from '../lib/seoUtils';
 import { FeedbackDialog } from './ui/FeedbackDialog';
 import { exportProductsToExcel, downloadProductExcelTemplate, parseProductExcel } from '../lib/productExcelService';
 
-type DetailTab = 'title-summary' | 'price' | 'category' | 'image' | 'video' | 'publishing';
+type DetailTab = 'title-summary' | 'price' | 'category' | 'image' | 'publishing';
 
 interface ProductManagerProps {
   products: Product[];
@@ -1863,17 +1863,6 @@ export default function ProductManager({
 
               <button
                 type="button"
-                onClick={() => setActiveTab('video')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'video' ? 'bg-teal-700 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <Video className="h-4 w-4" />
-                <span>Product Video</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setActiveTab('publishing')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'publishing' ? 'bg-teal-700 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
@@ -3067,174 +3056,7 @@ export default function ProductManager({
                 </div>
               )}
 
-              {/* TAB 5: PRODUCT VIDEO (Specifically requested by user!) */}
-              {activeTab === 'video' && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                          <Video className="h-4 w-4 text-teal-600" />
-                          <span>Product Video Showcase</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500">
-                          Add manufacturing, usage, or demonstration video for the product details page.
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Enable Video Toggle */}
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100/70 transition">
-                      <input
-                        type="checkbox"
-                        checked={hasVideo}
-                        onChange={(e) => setHasVideo(e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                      />
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 block">
-                          Enable Product Video on Details Page
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          Displays video player and video thumbnail on the product page
-                        </span>
-                      </div>
-                    </label>
-
-                    {hasVideo && (
-                      <div className="space-y-4 pt-2">
-                        {/* Video Source Type */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">Video Source Type</label>
-                            <select
-                              value={videoType}
-                              onChange={(e) => setVideoType(e.target.value as any)}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                            >
-                              <option value="mp4">Upload Direct MP4 Video / Link</option>
-                              <option value="youtube">YouTube Embed URL</option>
-                              <option value="vimeo">Vimeo Video</option>
-                            </select>
-                          </div>
-
-                          <div className="sm:col-span-2">
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                              {videoType === 'youtube' ? 'YouTube URL Link *' : 'Video File Upload / Direct Link *'}
-                            </label>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={videoUrl}
-                                onChange={(e) => setVideoUrl(e.target.value)}
-                                placeholder={videoType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'Upload video below or paste MP4 link'}
-                                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                              />
-
-                              {videoType === 'mp4' && (
-                                <label className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm transition">
-                                  {isUploadingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                                  <input 
-                                    type="file" 
-                                    accept="video/mp4,video/webm,video/quicktime,video/*" 
-                                    onChange={async (e) => {
-                                      const file = e.target.files?.[0];
-                                      if (!file) return;
-                                      setIsUploadingVideo(true);
-                                      try {
-                                        const formData = new FormData();
-                                        formData.append('file', file);
-                                        const res = await fetch('/api/upload', {
-                                          method: 'POST',
-                                          body: formData
-                                        });
-                                        if (!res.ok) throw new Error('Video upload failed');
-                                        const data = await res.json();
-                                        const uploadedUrl = data.url || (data.filename ? `/uploads/${data.filename}` : '');
-                                        setVideoUrl(uploadedUrl);
-                                        if (!videoTitle) {
-                                          setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
-                                        }
-                                      } catch (err: any) {
-                                        console.error('Video upload failed:', err);
-                                        alert('Video upload error: ' + (err.message || 'Failed'));
-                                      } finally {
-                                        setIsUploadingVideo(false);
-                                      }
-                                    }}
-                                    className="hidden" 
-                                  />
-                                  <span>{isUploadingVideo ? 'Uploading...' : 'ভিডিও ফাইল আপলোড'}</span>
-                                </label>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Video Title & Poster */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">Video Title</label>
-                            <input
-                              type="text"
-                              value={videoTitle}
-                              onChange={(e) => setVideoTitle(e.target.value)}
-                              placeholder="e.g. Product Demonstration Video"
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">Video Poster Thumbnail URL</label>
-                            <input
-                              type="text"
-                              value={videoPoster}
-                              onChange={(e) => setVideoPoster(e.target.value)}
-                              placeholder="e.g. https://example.com/poster.jpg"
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Video Description */}
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Video Description / Highlights</label>
-                          <textarea
-                            rows={3}
-                            value={videoDescription}
-                            onChange={(e) => setVideoDescription(e.target.value)}
-                            placeholder="Detailed description of the factory processes, quality checks, and product usage..."
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                          />
-                        </div>
-
-                        {/* Live Video Preview in Admin */}
-                        {videoUrl && (
-                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                            <span className="text-[11px] font-bold text-slate-700 block">Live Video Preview:</span>
-                            <div className="relative aspect-video max-w-md mx-auto rounded-lg overflow-hidden bg-black shadow-sm">
-                              {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
-                                <iframe
-                                  src={videoUrl.replace('watch?v=', 'embed/')}
-                                  title="Admin Video Preview"
-                                  className="w-full h-full"
-                                  allowFullScreen
-                                />
-                              ) : (
-                                <video
-                                  src={videoUrl}
-                                  controls
-                                  className="w-full h-full object-cover"
-                                />
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* TAB 5: PUBLISHING CONTROL */}
               {activeTab === 'publishing' && (
