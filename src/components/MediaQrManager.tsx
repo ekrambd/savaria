@@ -20,7 +20,7 @@ import {
   Eye
 } from 'lucide-react';
 import { MediaQrItem } from '../types';
-import { dbService } from '../lib/dbService';
+import { dbService, getAdminAuthHeaders } from '../lib/dbService';
 
 export const MediaQrManager: React.FC = () => {
   const [items, setItems] = useState<MediaQrItem[]>([]);
@@ -84,8 +84,12 @@ export const MediaQrManager: React.FC = () => {
         setUploadProgress(prev => (prev < 90 ? prev + 15 : prev));
       }, 300);
 
+      const authHeaders = getAdminAuthHeaders();
+      delete (authHeaders as any)['Content-Type']; // Let browser set multipart boundary
+
       const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: authHeaders,
         body: formData,
       });
 
