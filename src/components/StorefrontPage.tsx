@@ -2282,7 +2282,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             )}
 
             {/* Brand Title (Well-proportioned & responsive) */}
-            <span className="font-sans font-black text-xs sm:text-sm md:text-base lg:text-[17px] tracking-tight text-slate-900 uppercase leading-snug line-clamp-2">
+            <span className="font-sans font-bold text-xs sm:text-sm md:text-base lg:text-[17px] tracking-tight text-slate-900 leading-snug line-clamp-2">
               {displayStoreName || 'Bangladesh Handwriting Association'}
             </span>
           </div>
