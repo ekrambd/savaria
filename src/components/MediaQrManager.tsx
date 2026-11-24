@@ -135,7 +135,10 @@ export const MediaQrManager: React.FC = () => {
         pageNumber: pageNumber.trim() || undefined,
         mediaType,
         mediaUrl: mediaUrl.trim(),
+        fileUrl: mediaUrl.trim(),
+        youtubeUrl: mediaType === 'youtube' ? mediaUrl.trim() : undefined,
         customShortCode: customShortCode.trim() || undefined,
+        shortCode: customShortCode.trim() || undefined,
         description: description.trim() || undefined,
       });
 

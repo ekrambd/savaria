@@ -38,10 +38,24 @@ mediaQrRouter.get('/:code', (req, res) => {
 // POST /api/media-qr - Add new media item
 mediaQrRouter.post('/', requireAdmin, (req, res) => {
   try {
-    const newItem: MediaQrItem = req.body;
-    if (!newItem || !newItem.fileUrl) {
+    const raw = req.body || {};
+    const fileUrl = raw.fileUrl || raw.mediaUrl || raw.youtubeUrl || '';
+    if (!fileUrl) {
       return res.status(400).json({ success: false, error: 'Media file URL or YouTube URL is required' });
     }
+
+    const newItem: MediaQrItem = {
+      id: raw.id || `media-${Date.now()}`,
+      title: raw.title || 'Untitled',
+      mediaType: raw.mediaType || 'video',
+      fileUrl: fileUrl,
+      youtubeUrl: raw.youtubeUrl || (raw.mediaType === 'youtube' ? fileUrl : undefined),
+      description: raw.description,
+      shortCode: raw.customShortCode || raw.shortCode || `v-${Date.now().toString(36)}`,
+      bookTitle: raw.bookTitle,
+      pageNumber: raw.pageNumber,
+      createdAt: raw.createdAt || new Date().toISOString()
+    };
 
     const settings = loadSettingsFromDisk();
     const items: MediaQrItem[] = settings.mediaQrItems || [];
