@@ -4036,142 +4036,208 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
       )}
 
       {/* VIEW 6: HOME VIEW (Default Storefront) */}
-      {/* VIEW 6: HOME VIEW (CLEAN MINIMAL VENT STYLE) */}
+      {/* VIEW 6: HOME VIEW (CLEAN MINIMAL HERO & PRODUCT GRID) */}
       {activeNav === 'home' && (
         <>
           {/* ============================================================
-              1. HERO BANNERS (ONLY RENDER IF ADMIN HAS CONFIGURED BANNERS)
+              1. FULL-WIDTH HERO SLIDER (VIDEO & IMAGE BANNERS FROM R2/ADMIN)
               ============================================================ */}
           {activeHeroBanners && activeHeroBanners.length > 0 && (
-            <section className="bg-white pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-stone-200">
-              <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-                {activeHeroBanners.length >= 3 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                    {activeHeroBanners.slice(0, 3).map((item: any, idx: number) => {
-                      const img = item.imageUrl || item.image || DEFAULT_STORE_FALLBACK_IMAGE;
-                      const title = item.title || `Collection ${idx + 1}`;
-                      const targetCat = item.category || 'All';
+            <section 
+              className="relative z-30 w-full overflow-hidden select-none flex items-center h-[260px] sm:h-[400px] md:h-[500px] lg:h-[580px] bg-slate-950"
+              onMouseEnter={() => setIsSliderPaused(true)}
+              onMouseLeave={() => setIsSliderPaused(false)}
+            >
+              {activeHeroBanners.map((banner, index) => {
+                const isActive = index === activeSlideIndex;
+                const isVideo = banner.mediaType === 'video';
+                const ytId = isVideo && (banner.videoType === 'youtube' || banner.youtubeUrl)
+                  ? extractYouTubeVideoId(banner.youtubeUrl || banner.videoUrl)
+                  : null;
+                const directVideoUrl = isVideo && !ytId ? banner.videoUrl : null;
 
-                      return (
-                        <div
-                          key={item.id || idx}
-                          onClick={() => {
-                            if (item.buttonLink) {
-                              if (item.buttonLink.startsWith('http')) {
-                                window.open(item.buttonLink, '_blank');
-                              } else {
-                                navigate(item.buttonLink);
-                              }
-                            } else {
-                              if (targetCat && targetCat !== 'All') {
-                                setSelectedCategoryCheckbox(targetCat);
-                              }
-                              navigateTo('shop');
-                            }
-                          }}
-                          className="relative aspect-[4/5] sm:aspect-[3/4] w-full overflow-hidden bg-stone-100 group cursor-pointer"
-                        >
-                          <img
-                            src={img}
-                            alt={title}
-                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                            loading={idx === 0 ? "eager" : "lazy"}
+                return (
+                  <div
+                    key={banner.id || index}
+                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                      isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                    }`}
+                  >
+                    {/* Slide Media: Video (Cloudflare R2 or YouTube) or Image */}
+                    {isVideo ? (
+                      <div className="absolute inset-0 overflow-hidden bg-black flex items-center justify-center">
+                        {ytId ? (
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=1&loop=1&playlist=${ytId}&playsinline=1&rel=0&modestbranding=1`}
+                            title={banner.title || "Hero Video"}
+                            loading="lazy"
+                            className="w-full h-full border-0 aspect-video pointer-events-auto"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
                           />
-                          <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors" />
+                        ) : directVideoUrl ? (
+                          <video
+                            ref={(el) => {
+                              const videoKey = banner.id || String(index);
+                              heroVideoRefs.current[videoKey] = el;
+                              if (el) {
+                                if (isActive) {
+                                  el.muted = isHeroMuted;
+                                  el.play().catch(() => {});
+                                } else {
+                                  el.pause();
+                                  el.currentTime = 0;
+                                }
+                              }
+                            }}
+                            autoPlay
+                            loop={activeHeroBanners.length <= 1}
+                            muted={isHeroMuted}
+                            playsInline
+                            preload="auto"
+                            poster={banner.imageUrl || undefined}
+                            className="w-full h-full object-cover pointer-events-auto"
+                          >
+                            <source src={directVideoUrl} type="video/mp4" />
+                          </video>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0">
+                        <picture>
+                          {banner.mobileImageUrl && (
+                            <source media="(max-width: 640px)" srcSet={banner.mobileImageUrl} />
+                          )}
+                          {banner.imageUrl ? (
+                            <img
+                              src={banner.imageUrl}
+                              alt={banner.title || displayStoreName}
+                              className="w-full h-full object-cover object-center"
+                              loading={index === 0 ? 'eager' : 'lazy'}
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-slate-900" />
+                          )}
+                        </picture>
+                      </div>
+                    )}
 
-                          {/* Center Title and View More Button */}
-                          {(item.title || item.buttonText) && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                              {item.title && (
-                                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-wide drop-shadow-md mb-4 sm:mb-6">
-                                  {item.title}
-                                </h3>
-                              )}
-                              <button
-                                type="button"
-                                className="px-6 py-2.5 bg-white text-stone-900 text-xs sm:text-sm font-bold tracking-widest uppercase hover:bg-stone-900 hover:text-white transition-all duration-300 shadow-md cursor-pointer"
-                              >
-                                {item.buttonText || 'VIEW MORE'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  /* Single or 2-banner clean showcase */
-                  <div className={`grid grid-cols-1 ${activeHeroBanners.length === 2 ? 'md:grid-cols-2' : ''} gap-4 sm:gap-6`}>
-                    {activeHeroBanners.map((item: any, idx: number) => {
-                      const img = item.imageUrl || item.image || DEFAULT_STORE_FALLBACK_IMAGE;
-                      return (
-                        <div
-                          key={item.id || idx}
-                          onClick={() => {
-                            if (item.buttonLink) {
-                              if (item.buttonLink.startsWith('http')) {
-                                window.open(item.buttonLink, '_blank');
+                    {/* Gradient Overlay & Text/Buttons (Only if not imageOnly) */}
+                    {!banner.imageOnly && (banner.title || banner.subtitle || banner.buttonText) && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20 flex flex-col items-center justify-center p-6 text-center text-white">
+                        {banner.badge && (
+                          <span className="px-3 py-1 bg-amber-500 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-full mb-3">
+                            {banner.badge}
+                          </span>
+                        )}
+                        {banner.title && (
+                          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black drop-shadow-lg mb-3 max-w-3xl">
+                            {banner.title}
+                          </h1>
+                        )}
+                        {banner.subtitle && (
+                          <p className="text-sm sm:text-lg text-slate-200 max-w-xl mb-6">
+                            {banner.subtitle}
+                          </p>
+                        )}
+                        {banner.buttonText && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (banner.link) {
+                                if (banner.link.startsWith('http')) {
+                                  window.open(banner.link, '_blank');
+                                } else {
+                                  navigate(banner.link);
+                                }
                               } else {
-                                navigate(item.buttonLink);
+                                navigateTo('shop');
                               }
-                            } else {
-                              navigateTo('shop');
-                            }
-                          }}
-                          className="relative aspect-[16/7] sm:aspect-[21/9] w-full overflow-hidden bg-stone-100 group cursor-pointer rounded-sm"
-                        >
-                          <img
-                            src={img}
-                            alt={item.title || 'Banner'}
-                            className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-700 ease-out"
-                          />
-                          {(item.title || item.buttonText) && (
-                            <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center p-6 text-center text-white">
-                              {item.title && (
-                                <h2 className="text-2xl sm:text-4xl font-black mb-3 drop-shadow">
-                                  {item.title}
-                                </h2>
-                              )}
-                              {item.buttonText && (
-                                <button className="px-6 py-2.5 bg-white text-stone-900 text-xs font-bold uppercase tracking-widest shadow">
-                                  {item.buttonText}
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                            }}
+                            className="px-8 py-3 bg-white text-slate-950 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-100 transition shadow-xl cursor-pointer"
+                          >
+                            {banner.buttonText}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })}
+
+              {/* Slider Arrows */}
+              {activeHeroBanners.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevSlide}
+                    className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white flex items-center justify-center border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
+                    aria-label="Previous Slide"
+                  >
+                    <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextSlide}
+                    className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white flex items-center justify-center border border-white/20 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
+                    aria-label="Next Slide"
+                  >
+                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+
+                  {/* Dot Indicators */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-lg">
+                    {activeHeroBanners.map((b, dotIdx) => (
+                      <button
+                        key={dotIdx}
+                        type="button"
+                        onClick={() => setActiveSlideIndex(dotIdx)}
+                        className={`transition-all rounded-full cursor-pointer ${
+                          dotIdx === activeSlideIndex
+                            ? 'w-7 h-2 bg-emerald-400 shadow-md'
+                            : 'w-2 h-2 bg-white/50 hover:bg-white/80'
+                        }`}
+                        aria-label={`Slide ${dotIdx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Sound Toggle Button for Video Slides */}
+              {activeHeroBanners[activeSlideIndex]?.mediaType === 'video' && (
+                <button
+                  type="button"
+                  onClick={toggleHeroSound}
+                  className="absolute bottom-4 right-4 z-30 inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/85 backdrop-blur-md text-white border border-white/20 shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
+                  title={isHeroMuted ? "Sound On" : "Sound Off"}
+                  aria-label={isHeroMuted ? "Unmute video" : "Mute video"}
+                >
+                  {isHeroMuted ? (
+                    <VolumeX className="w-4 h-4 text-rose-300" />
+                  ) : (
+                    <Volume2 className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  )}
+                </button>
+              )}
             </section>
           )}
 
           {/* ============================================================
-              2. NEW ARRIVALS - MINIMAL 4-COLUMN PRODUCT GRID (MATCHING VENT SCREENSHOT 2)
+              2. PRODUCTS SHOWCASE (CLEAN GRID DIRECTLY BELOW BANNER - NO NEW ARRIVALS TITLE)
               ============================================================ */}
-          <section className="bg-white py-12 sm:py-16">
+          <section className="bg-white py-8 sm:py-12">
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
               
-              {/* Header: Centered Minimal Vent Title */}
-              <div className="text-center mb-10 sm:mb-12">
-                <h2 className="text-xl sm:text-2xl font-black text-stone-900 uppercase tracking-widest">
-                  NEW ARRIVALS
-                </h2>
-                <p className="text-xs sm:text-sm text-stone-500 font-medium mt-1">
-                  New Collection of This Month
-                </p>
-              </div>
-
-              {/* Minimal 4-Column Product Grid */}
+              {/* Minimal 4-Column Product Grid (Showing up to 16 products cleanly) */}
               {products.length === 0 ? (
                 <div className="py-16 text-center text-stone-400 font-medium">
                   No products available right now.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-12">
-                  {products.map((prod) => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                  {products.slice(0, 16).map((prod) => {
                     const imgSrc = prod.coverImage || prod.image || (prod.images && prod.images[0]) || DEFAULT_STORE_FALLBACK_IMAGE;
                     const hasDiscount = prod.regularPrice && prod.regularPrice > prod.price;
 
@@ -4179,10 +4245,10 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                       <div
                         key={prod.id}
                         onClick={() => openProductDetail(prod)}
-                        className="group flex flex-col cursor-pointer"
+                        className="group flex flex-col cursor-pointer bg-white rounded-xl border border-stone-200/80 hover:border-stone-400 transition-all p-2.5 sm:p-3 hover:shadow-md"
                       >
                         {/* Clean Product Image Frame */}
-                        <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-50 mb-3 border border-stone-100 group-hover:border-stone-300 transition-colors">
+                        <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-50 rounded-lg mb-3">
                           <img
                             src={optimizeImageUrl(imgSrc, 500)}
                             alt={prod.title}
@@ -4190,7 +4256,7 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                             className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                           />
                           {hasDiscount && (
-                            <span className="absolute top-2.5 left-2.5 bg-stone-900 text-white text-[10px] font-bold px-2 py-0.5 tracking-wider uppercase">
+                            <span className="absolute top-2 left-2 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase shadow-xs">
                               SALE
                             </span>
                           )}
@@ -4198,15 +4264,15 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
 
                         {/* Title & Price Below Image */}
                         <div className="text-center px-1">
-                          <h3 className="text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-stone-600 transition-colors line-clamp-1 mb-1">
+                          <h3 className="text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-stone-600 transition-colors line-clamp-2 mb-1.5 leading-snug">
                             {prod.title}
                           </h3>
                           <div className="flex items-center justify-center gap-2">
-                            <span className="text-xs sm:text-sm font-bold text-amber-700">
+                            <span className="text-xs sm:text-sm font-bold text-emerald-700">
                               Tk {Number(prod.price).toLocaleString()} BDT
                             </span>
                             {hasDiscount && (
-                              <span className="text-xs text-stone-400 line-through">
+                              <span className="text-[11px] sm:text-xs text-stone-400 line-through">
                                 Tk {Number(prod.regularPrice).toLocaleString()} BDT
                               </span>
                             )}
@@ -4219,12 +4285,12 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
               )}
 
               {/* View All Button */}
-              {products.length > 8 && (
-                <div className="text-center mt-12 sm:mt-16">
+              {products.length > 16 && (
+                <div className="text-center mt-10 sm:mt-12">
                   <button
                     type="button"
                     onClick={() => navigateTo('shop')}
-                    className="px-8 py-3 border border-stone-900 text-stone-900 hover:bg-stone-900 hover:text-white text-xs font-bold tracking-widest uppercase transition-all duration-300 cursor-pointer"
+                    className="px-8 py-3 bg-stone-900 text-white hover:bg-stone-800 text-xs font-bold tracking-widest uppercase rounded-xl transition-all duration-300 cursor-pointer shadow-md"
                   >
                     DISCOVER ALL PRODUCTS
                   </button>
