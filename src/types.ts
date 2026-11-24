@@ -520,7 +520,21 @@ export interface AbandonedCartMetrics {
   recoveryRate: number;
 }
 
+export interface MediaQrItem {
+  id: string;
+  title: string;
+  mediaType: 'video' | 'image' | 'youtube';
+  fileUrl: string; // Internal upload url or youtube url
+  youtubeUrl?: string;
+  description?: string;
+  shortCode: string; // e.g. "hw-class-5", "video-1"
+  bookTitle?: string;
+  pageNumber?: string;
+  createdAt: string;
+}
+
 export interface EcomSettings {
+  mediaQrItems?: MediaQrItem[];
   headerSettings?: HeaderSettings;
   storeName?: string;
   storeDomain?: string;
@@ -969,7 +983,7 @@ export interface Brand {
   updatedAt?: string;
 }
 
-export type ActiveTab = 'dashboard' | 'products' | 'orders' | 'abandoned_carts' | 'customers' | 'coupons' | 'inventory' | 'category_management' | 'brand_management' | 'unit_management' | 'attribute_management' | 'slider_management' | 'header_settings' | 'flash_sale' | 'collections' | 'about_settings' | 'landing_setup' | 'payment_settings' | 'delivery_settings' | 'pixel_settings' | 'courier_settings' | 'profile' | 'contact_messages';
+export type ActiveTab = 'dashboard' | 'products' | 'orders' | 'abandoned_carts' | 'customers' | 'coupons' | 'inventory' | 'category_management' | 'brand_management' | 'unit_management' | 'attribute_management' | 'slider_management' | 'header_settings' | 'flash_sale' | 'collections' | 'about_settings' | 'landing_setup' | 'payment_settings' | 'delivery_settings' | 'pixel_settings' | 'courier_settings' | 'profile' | 'contact_messages' | 'media_qr';
 
 export interface ContactMessage {
   id: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  Users, LogOut, Menu, X, Check, ShoppingBag, ShoppingCart, ClipboardList, Package, LayoutDashboard, User, Code, Truck, CreditCard, Tag, Boxes, Store, Globe, Layout, Layers, Bell, Coins, Send, Sparkles, Eye, Bookmark, Camera, HeartHandshake, Zap, Mail, Award, Scale, Sliders
+  Users, LogOut, Menu, X, Check, ShoppingBag, ShoppingCart, ClipboardList, Package, LayoutDashboard, User, Code, Truck, CreditCard, Tag, Boxes, Store, Globe, Layout, Layers, Bell, Coins, Send, Sparkles, Eye, Bookmark, Camera, HeartHandshake, Zap, Mail, Award, Scale, Sliders, QrCode
 } from 'lucide-react';
 import { dbService, subscribeToOrders } from '../lib/dbService';
 import { ApiClient } from '../services/apiClient';
@@ -28,6 +28,7 @@ const AboutUsManager = lazy(() => import('./AboutUsManager'));
 const FlashSaleManager = lazy(() => import('./FlashSaleManager'));
 const FeaturedCollectionsManager = lazy(() => import('./FeaturedCollectionsManager'));
 const SliderManager = lazy(() => import('./SliderManager'));
+const MediaQrManager = lazy(() => import('./MediaQrManager').then(m => ({ default: m.MediaQrManager })));
 import { TabContentSkeleton } from './LoadingSkeleton';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -351,6 +352,7 @@ export default function AdminDashboard({ adminEmail, onLogout }: AdminDashboardP
 
     // --- Group 4: Marketing & Content ---
     { id: 'header_marketing' as any, isHeader: true, label: 'Marketing' },
+    { id: 'media_qr' as const, label: 'Media & QR Codes', icon: QrCode },
     { id: 'coupons' as const, label: 'Coupons', icon: Tag },
     { id: 'flash_sale' as const, label: 'Flash Sale', icon: Zap },
     { id: 'collections' as const, label: 'Collections', icon: Sparkles },
@@ -664,6 +666,9 @@ export default function AdminDashboard({ adminEmail, onLogout }: AdminDashboardP
                 )}
                 {activeTab === 'slider_management' && (
                   <SliderManager />
+                )}
+                {activeTab === 'media_qr' && (
+                  <MediaQrManager />
                 )}
                 {activeTab === 'flash_sale' && (
                   <FlashSaleManager 

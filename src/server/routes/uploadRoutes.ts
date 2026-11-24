@@ -18,7 +18,7 @@ const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max file size
+  limits: { fileSize: 200 * 1024 * 1024 } // 200MB max file size for videos & high-res media
 });
 
 uploadRouter.post('/', requireAdmin, upload.single('file'), async (req: any, res) => {

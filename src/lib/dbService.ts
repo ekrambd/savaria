@@ -2576,6 +2576,43 @@ export const dbService = {
       await this.saveEcomSettings(payload);
     }
     window.dispatchEvent(new Event('ecom-settings-updated'));
+  },
+
+  // Media QR & Book Video Learning
+  async getMediaQrItems(): Promise<any[]> {
+    try {
+      const res = await ApiClient.getMediaQrItems();
+      if (res && res.items) return res.items;
+    } catch (e) {
+      console.warn('Failed to load media QR items from API:', e);
+    }
+    const s = await this.getEcomSettings();
+    return s.mediaQrItems || [];
+  },
+
+  async getMediaQrItem(code: string): Promise<any | null> {
+    try {
+      const res = await ApiClient.getMediaQrItem(code);
+      if (res && res.item) return res.item;
+    } catch (e) {
+      console.warn('Failed to load media QR item:', e);
+    }
+    const list = await this.getMediaQrItems();
+    return list.find((m: any) => m.shortCode === code || m.id === code) || null;
+  },
+
+  async saveMediaQrItem(item: any): Promise<any> {
+    if (item.id && !item.isNew) {
+      const res = await ApiClient.updateMediaQrItem(item.id, item);
+      return res.item;
+    } else {
+      const res = await ApiClient.createMediaQrItem(item);
+      return res.item;
+    }
+  },
+
+  async deleteMediaQrItem(id: string): Promise<void> {
+    await ApiClient.deleteMediaQrItem(id);
   }
 };
 

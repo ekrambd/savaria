@@ -10,6 +10,7 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const loadBookLandingPage = () => import('./components/BookLandingPage');
 const BookLandingPage = lazy(loadBookLandingPage);
 const StorefrontPage = lazy(() => import('./components/StorefrontPage'));
+const MediaViewerPage = lazy(() => import('./components/MediaViewerPage'));
 
 // Fix: Only preload landing page chunk if visiting a known landing path
 if (typeof window !== 'undefined') {
@@ -256,6 +257,10 @@ function AppRoutes() {
               )
             } />
             
+            {/* Book Video / Media Public Viewer (for QR code scans) */}
+            <Route path="/v/:code" element={<MediaViewerPage />} />
+            <Route path="/media/:code" element={<MediaViewerPage />} />
+
             {/* Landing Page Routes */}
             <Route path="/landing/:slug" element={
               <BookLandingPage 

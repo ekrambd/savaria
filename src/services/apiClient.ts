@@ -286,4 +286,33 @@ export class ApiClient {
       method: 'DELETE'
     });
   }
+
+  // Media QR & Book Video Learning Endpoints
+  static getMediaQrItems(): Promise<{ success: boolean; items: any[] }> {
+    return this.request<{ success: boolean; items: any[] }>('/media-qr');
+  }
+
+  static getMediaQrItem(code: string): Promise<{ success: boolean; item: any }> {
+    return this.request<{ success: boolean; item: any }>(`/media-qr/${encodeURIComponent(code)}`);
+  }
+
+  static createMediaQrItem(payload: any): Promise<{ success: boolean; item: any }> {
+    return this.request<{ success: boolean; item: any }>('/media-qr', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  static updateMediaQrItem(id: string, payload: any): Promise<{ success: boolean; item: any }> {
+    return this.request<{ success: boolean; item: any }>(`/media-qr/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  static deleteMediaQrItem(id: string): Promise<{ success: boolean; id: string }> {
+    return this.request<{ success: boolean; id: string }>(`/media-qr/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+  }
 }
