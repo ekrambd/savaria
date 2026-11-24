@@ -492,7 +492,7 @@ export const MediaQrManager: React.FC = () => {
             ) : (
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  ফাইল আপলোড করুন (File Upload - max 200MB) *
+                  ফাইল আপলোড করুন (File Upload - Max 1GB / Cloudflare R2) *
                 </label>
                 <div className="flex items-center gap-2">
                   <input
