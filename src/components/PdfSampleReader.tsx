@@ -25,7 +25,9 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [readingProgress, setReadingProgress] = useState<number>(0);
   const [isCopiedWarning, setIsCopiedWarning] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'continuous' | 'single'>('continuous');
   const containerRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // If using sample images (high performance, 0-second canvas rendering)
   const isImageMode = samplePages && samplePages.length > 0;
@@ -96,21 +98,47 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
 
   if (!isOpen) return null;
 
+  const scrollToPage = (pageNum: number) => {
+    setCurrentPage(pageNum);
+    if (viewMode === 'continuous') {
+      const el = pageRefs.current[pageNum - 1];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleNextPage = () => {
     const max = isImageMode ? samplePages.length : totalPages;
     if (currentPage < max) {
-      setCurrentPage(prev => prev + 1);
-      if (containerRef.current) {
-        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      scrollToPage(currentPage + 1);
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-      if (containerRef.current) {
-        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToPage(currentPage - 1);
+    }
+  };
+
+  // Update current page on continuous scroll
+  const handleScroll = () => {
+    if (viewMode !== 'continuous' || !containerRef.current || !isImageMode) return;
+    const containerTop = containerRef.current.scrollTop;
+    const containerHeight = containerRef.current.clientHeight;
+    const centerPoint = containerTop + containerHeight / 3;
+
+    for (let i = 0; i < pageRefs.current.length; i++) {
+      const el = pageRefs.current[i];
+      if (el) {
+        const offsetTop = el.offsetTop;
+        const offsetHeight = el.offsetHeight;
+        if (centerPoint >= offsetTop && centerPoint < offsetTop + offsetHeight) {
+          setCurrentPage(i + 1);
+          break;
+        }
       }
     }
   };
@@ -185,36 +213,64 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Zoom Controls & Close Button */}
+        {/* Right: View Mode Toggle, Zoom Controls & Close Button */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {isImageMode && (
-            <div className="hidden md:flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-xl px-2 py-1 text-slate-300 text-xs">
-              <button
-                type="button"
-                onClick={() => setZoom(prev => Math.max(60, prev - 15))}
-                className="p-1 hover:text-white transition cursor-pointer"
-                title="Zoom Out"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <span className="font-mono text-[11px] w-9 text-center">{zoom}%</span>
-              <button
-                type="button"
-                onClick={() => setZoom(prev => Math.min(200, prev + 15))}
-                className="p-1 hover:text-white transition cursor-pointer"
-                title="Zoom In"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom(100)}
-                className="p-1 hover:text-white transition cursor-pointer ml-1"
-                title="Reset Zoom"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <>
+              {/* View Mode Toggle (Continuous Vertical Scroll vs Single Page) */}
+              <div className="flex items-center bg-slate-800 border border-slate-700 rounded-xl p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('continuous')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer ${
+                    viewMode === 'continuous' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Vertical Continuous Scroll (Scroll all pages)"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">স্ক্রোল ভিউ</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('single')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer ${
+                    viewMode === 'single' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Single Page View"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">একক পাতা</span>
+                </button>
+              </div>
+
+              <div className="hidden md:flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-xl px-2 py-1 text-slate-300 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setZoom(prev => Math.max(60, prev - 15))}
+                  className="p-1 hover:text-white transition cursor-pointer"
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="font-mono text-[11px] w-9 text-center">{zoom}%</span>
+                <button
+                  type="button"
+                  onClick={() => setZoom(prev => Math.min(200, prev + 15))}
+                  className="p-1 hover:text-white transition cursor-pointer"
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(100)}
+                  className="p-1 hover:text-white transition cursor-pointer ml-1"
+                  title="Reset Zoom"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </>
           )}
 
           <button
@@ -232,7 +288,8 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
       {/* 2. PROTECTED READING VIEWER CANVAS */}
       <main 
         ref={containerRef}
-        className="flex-1 overflow-auto bg-slate-950 flex flex-col items-center justify-start p-3 sm:p-6 relative select-none"
+        onScroll={handleScroll}
+        className="flex-1 overflow-auto bg-slate-950 flex flex-col items-center justify-start p-3 sm:p-6 relative select-none scroll-smooth"
       >
         {/* Anti-Piracy Watermark Overlay */}
         <div className="pointer-events-none fixed inset-0 flex items-center justify-center opacity-4 z-20">
@@ -267,22 +324,54 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
 
         {/* Content Render: Multi-page / Image Mode vs Embedded Vector PDF */}
         {isImageMode ? (
-          <div 
-            className="transition-transform duration-200 flex flex-col items-center justify-center my-auto"
-            style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
-          >
-            <div className="relative shadow-2xl rounded-xl overflow-hidden border border-slate-800 bg-white max-w-full">
-              {/* Disable drag, right click on image */}
-              <img
-                src={samplePages[currentPage - 1]}
-                alt={`Sample Page ${currentPage}`}
-                className="max-h-[82vh] w-auto object-contain pointer-events-none select-none"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
-                onLoad={() => setIsLoading(false)}
-              />
+          viewMode === 'continuous' ? (
+            /* Continuous Vertical Scroll View (All 36 pages scrollable like a real PDF) */
+            <div 
+              className="w-full flex flex-col items-center gap-6 sm:gap-8 py-4 transition-transform duration-200"
+              style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
+            >
+              {samplePages.map((pageImg, idx) => (
+                <div
+                  key={idx}
+                  ref={(el) => { pageRefs.current[idx] = el; }}
+                  className="relative shadow-2xl rounded-xl overflow-hidden border border-slate-800 bg-white max-w-full"
+                >
+                  {/* Page Number Pill */}
+                  <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md text-white text-[11px] font-mono font-bold px-2.5 py-1 rounded-full shadow border border-white/10 pointer-events-none">
+                    Page {idx + 1}
+                  </div>
+                  <img
+                    src={pageImg}
+                    alt={`Sample Page ${idx + 1}`}
+                    className="max-h-[85vh] w-auto object-contain pointer-events-none select-none"
+                    draggable={false}
+                    loading={idx < 3 ? 'eager' : 'lazy'}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onLoad={() => {
+                      if (idx === 0) setIsLoading(false);
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            /* Single Page View */
+            <div 
+              className="transition-transform duration-200 flex flex-col items-center justify-center my-auto"
+              style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
+            >
+              <div className="relative shadow-2xl rounded-xl overflow-hidden border border-slate-800 bg-white max-w-full">
+                <img
+                  src={samplePages[currentPage - 1]}
+                  alt={`Sample Page ${currentPage}`}
+                  className="max-h-[82vh] w-auto object-contain pointer-events-none select-none"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onLoad={() => setIsLoading(false)}
+                />
+              </div>
+            </div>
+          )
         ) : (
           <div className="w-full max-w-4xl h-full flex flex-col items-center justify-center my-auto rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-white relative">
             <iframe
