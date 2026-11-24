@@ -326,12 +326,13 @@ export default function SliderManager() {
     const file = e.target.files?.[0];
     if (!file || !editingBanner) return;
 
-    if (file.size > 100 * 1024 * 1024) {
+    // Supports up to 500MB video upload directly to Cloudflare R2
+    if (file.size > 500 * 1024 * 1024) {
       setFeedback({
         isOpen: true,
         type: 'error',
         title: 'Video file size is large',
-        message: 'Please select an MP4/WebM video file smaller than 100MB.'
+        message: 'Please select an MP4/WebM video file smaller than 500MB.'
       });
       return;
     }
