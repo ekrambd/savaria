@@ -257,7 +257,10 @@ function AppRoutes() {
               )
             } />
             
-            {/* Book Video / Media Public Viewer (for QR code scans) */}
+            {/* Book Video / Learning Center Dedicated Routes (for QR code scans) */}
+            <Route path="/learn/:code" element={<MediaViewerPage />} />
+            <Route path="/learning/:code" element={<MediaViewerPage />} />
+            <Route path="/lesson/:code" element={<MediaViewerPage />} />
             <Route path="/v/:code" element={<MediaViewerPage />} />
             <Route path="/media/:code" element={<MediaViewerPage />} />
 

@@ -204,7 +204,7 @@ export const MediaQrManager: React.FC = () => {
   };
 
   const copyShareUrl = (shortCode: string, id: string) => {
-    const url = `${window.location.origin}/v/${shortCode}`;
+    const url = `${window.location.origin}/learn/${shortCode}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -213,7 +213,7 @@ export const MediaQrManager: React.FC = () => {
   // Open QR download / print modal
   const openQrModal = async (item: MediaQrItem) => {
     setSelectedItemForPrint(item);
-    const targetUrl = `${window.location.origin}/v/${item.shortCode}`;
+    const targetUrl = `${window.location.origin}/learn/${item.shortCode}`;
     try {
       const dataUrl = await QRCode.toDataURL(targetUrl, {
         width: 600,
@@ -231,7 +231,7 @@ export const MediaQrManager: React.FC = () => {
 
   // Download 100% Pure, Ultra High-Resolution (1200x1200px) QR Code only for sharp printing on books
   const downloadHighResQr = async (item: MediaQrItem) => {
-    const targetUrl = `${window.location.origin}/v/${item.shortCode}`;
+    const targetUrl = `${window.location.origin}/learn/${item.shortCode}`;
     try {
       // 1200x1200px crystal clear 300+ DPI vector-crisp QR code
       const pureQrDataUrl = await QRCode.toDataURL(targetUrl, {
@@ -260,7 +260,7 @@ export const MediaQrManager: React.FC = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow || !selectedItemForPrint) return;
 
-    const targetUrl = `${window.location.origin}/v/${selectedItemForPrint.shortCode}`;
+    const targetUrl = `${window.location.origin}/learn/${selectedItemForPrint.shortCode}`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -552,7 +552,7 @@ export const MediaQrManager: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <span className="px-2.5 py-2 text-xs text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg select-none">
-                  savariabd.com/v/
+                  savariabd.com/learn/
                 </span>
                 <input
                   type="text"
@@ -673,7 +673,7 @@ export const MediaQrManager: React.FC = () => {
                         {/* Short link */}
                         <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
                           <span className="font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-emerald-700 font-semibold select-all">
-                            savariabd.com/v/{item.shortCode}
+                            savariabd.com/learn/{item.shortCode}
                           </span>
                           <button
                             onClick={() => copyShareUrl(item.shortCode, item.id)}
@@ -710,11 +710,11 @@ export const MediaQrManager: React.FC = () => {
                         </button>
 
                         <a
-                          href={`/v/${item.shortCode}`}
+                          href={`/learn/${item.shortCode}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Open Public Video Page"
+                          title="Open Learning Center Page"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
@@ -836,7 +836,7 @@ export const MediaQrManager: React.FC = () => {
                     {selectedItemForPrint.title}
                   </div>
                   <div className="text-[11px] text-gray-400 font-mono mt-1">
-                    savariabd.com/v/{selectedItemForPrint.shortCode}
+                    savariabd.com/learn/{selectedItemForPrint.shortCode}
                   </div>
                 </div>
               </div>

@@ -251,7 +251,7 @@ export default function MediaViewerPage() {
                 return (
                   <Link
                     key={rel.id}
-                    to={`/v/${rel.shortCode}`}
+                    to={`/learn/${rel.shortCode}`}
                     className="flex items-center gap-3 p-3 rounded-xl bg-stone-900/70 hover:bg-stone-850 border border-stone-800/80 hover:border-emerald-500/50 transition-all group"
                   >
                     <div className="w-20 h-14 rounded-lg bg-stone-800 shrink-0 overflow-hidden relative flex items-center justify-center">
