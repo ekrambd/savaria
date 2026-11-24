@@ -552,7 +552,7 @@ export const MediaQrManager: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <span className="px-2.5 py-2 text-xs text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg select-none">
-                  savariabd.com/learn/
+                  {typeof window !== 'undefined' ? `${window.location.host}/learn/` : 'handwriting-book.com/learn/'}
                 </span>
                 <input
                   type="text"
@@ -673,7 +673,7 @@ export const MediaQrManager: React.FC = () => {
                         {/* Short link */}
                         <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
                           <span className="font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-emerald-700 font-semibold select-all">
-                            savariabd.com/learn/{item.shortCode}
+                            {window.location.host}/learn/{item.shortCode}
                           </span>
                           <button
                             onClick={() => copyShareUrl(item.shortCode, item.id)}
@@ -836,7 +836,7 @@ export const MediaQrManager: React.FC = () => {
                     {selectedItemForPrint.title}
                   </div>
                   <div className="text-[11px] text-gray-400 font-mono mt-1">
-                    savariabd.com/learn/{selectedItemForPrint.shortCode}
+                    {window.location.host}/learn/{selectedItemForPrint.shortCode}
                   </div>
                 </div>
               </div>
