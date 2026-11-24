@@ -121,18 +121,29 @@ mediaQrRouter.get('/', (req, res) => {
   }
 });
 
-// GET /api/media-qr/:code - Resolve media item by shortCode or ID
+// GET /api/media-qr/:code - Resolve media item by shortCode or ID (Supports Bangla / URL Decoded)
 mediaQrRouter.get('/:code', (req, res) => {
   try {
-    const { code } = req.params;
+    const rawCode = req.params.code || '';
+    let decodedCode = rawCode;
+    try {
+      decodedCode = decodeURIComponent(rawCode);
+    } catch {}
+
     const items = getAllMediaQrItems();
-    const normalized = (code || '').trim().toLowerCase();
+    const normalizedRaw = rawCode.trim().toLowerCase();
+    const normalizedDecoded = decodedCode.trim().toLowerCase();
     
-    // Look up by shortCode or exact id
-    const item = items.find(m => 
-      (m.shortCode && m.shortCode.toLowerCase() === normalized) || 
-      m.id === code
-    );
+    // Look up by shortCode or exact id (matching either decoded Bangla or encoded)
+    const item = items.find(m => {
+      const itemCode = (m.shortCode || '').trim().toLowerCase();
+      return (
+        itemCode === normalizedDecoded || 
+        itemCode === normalizedRaw || 
+        m.id === rawCode || 
+        m.id === decodedCode
+      );
+    });
 
     if (!item) {
       return res.status(404).json({ success: false, error: 'Media not found' });
@@ -153,9 +164,9 @@ mediaQrRouter.post('/', requireAdmin, (req, res) => {
       return res.status(400).json({ success: false, error: 'Media file URL or YouTube URL is required' });
     }
 
-    // Determine short code
+    // Determine short code (Supports Bangla/Unicode, English, numbers, hyphens and underscores)
     const shortCodeRaw = raw.customShortCode || raw.shortCode || `v-${Date.now().toString(36)}`;
-    const shortCode = shortCodeRaw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const shortCode = shortCodeRaw.trim().toLowerCase().replace(/[\s/\\?#%&+=@!$^&*()~`'"|<>:;{}[\]]+/g, '-');
 
     const newItem: MediaQrItem = {
       id: raw.id || `media-${Date.now()}`,

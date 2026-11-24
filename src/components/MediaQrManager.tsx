@@ -281,7 +281,7 @@ export const MediaQrManager: React.FC = () => {
   // Open QR download / print modal
   const openQrModal = async (item: MediaQrItem) => {
     setSelectedItemForPrint(item);
-    const targetUrl = `${window.location.origin}/learn/${item.shortCode}`;
+    const targetUrl = `${window.location.origin}/learn/${encodeURI(item.shortCode)}`;
     try {
       const dataUrl = await QRCode.toDataURL(targetUrl, {
         width: 600,
@@ -299,7 +299,7 @@ export const MediaQrManager: React.FC = () => {
 
   // Download 100% Pure, Ultra High-Resolution (1200x1200px) QR Code only for sharp printing on books
   const downloadHighResQr = async (item: MediaQrItem) => {
-    const targetUrl = `${window.location.origin}/learn/${item.shortCode}`;
+    const targetUrl = `${window.location.origin}/learn/${encodeURI(item.shortCode)}`;
     try {
       // 1200x1200px crystal clear 300+ DPI vector-crisp QR code
       const pureQrDataUrl = await QRCode.toDataURL(targetUrl, {
@@ -328,7 +328,7 @@ export const MediaQrManager: React.FC = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow || !selectedItemForPrint) return;
 
-    const targetUrl = `${window.location.origin}/learn/${selectedItemForPrint.shortCode}`;
+    const targetUrl = `${window.location.origin}/learn/${encodeURI(selectedItemForPrint.shortCode)}`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -647,8 +647,14 @@ export const MediaQrManager: React.FC = () => {
                 <input
                   type="text"
                   value={customShortCode}
-                  onChange={e => setCustomShortCode(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-                  placeholder="যেমন: hw-p1"
+                  onChange={e => {
+                    // Support Bangla (Unicode), English, numbers, hyphens, underscores
+                    const sanitized = e.target.value
+                      .toLowerCase()
+                      .replace(/[\s/\\?#%&+=@!$^&*()~`'"|<>:;{}[\]]+/g, '-');
+                    setCustomShortCode(sanitized);
+                  }}
+                  placeholder="যেমন: hw-p1 বা বাংলা-১"
                   className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
                 />
               </div>
