@@ -179,35 +179,48 @@ export default function MediaViewerPage() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-start">
         
-        {/* Colorful Association & Official Badge */}
-        <div className="mb-3 flex items-center justify-center flex-wrap gap-2">
-          <a
-            href={fbLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 border border-blue-400/30 text-blue-200 text-xs font-bold shadow-md hover:border-blue-400 transition"
-          >
-            <Award className="w-4 h-4 text-amber-400" />
-            <span>বাংলাদেশ হ্যান্ডরাইটিং এসোসিয়েশন অনুমোদিত</span>
-          </a>
+        {/* Official Header Title & Horizontal Links (Facebook & Website) */}
+        <div className="flex flex-col items-center justify-center text-center mb-6 max-w-2xl px-2">
+          {/* Main Title: Bangladesh Handwriting Association */}
+          <h2 className="text-sm sm:text-base font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-amber-300 uppercase tracking-wider mb-3">
+            Bangladesh Handwriting Association
+          </h2>
 
-          {item.pageNumber && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-400/40 text-emerald-300 text-xs font-black shadow-md">
-              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-              <span>পৃষ্ঠা নং: {item.pageNumber}</span>
-            </span>
-          )}
-        </div>
+          {/* Horizontal Row: Facebook & Website Buttons side by side */}
+          <div className="flex items-center justify-center gap-3">
+            <a
+              href="https://www.facebook.com/bangladeshhandwritingassociation/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1877F2]/90 hover:bg-[#1877F2] text-white text-xs font-bold shadow-md shadow-blue-600/30 transition transform hover:scale-102 active:scale-95 border border-blue-400/30"
+              title="Visit Official Facebook Page"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              <span>Facebook Page</span>
+              <ExternalLink className="w-3 h-3 text-blue-200" />
+            </a>
 
-        {/* Vibrant Gradient Title */}
-        <div className="text-center mb-5 max-w-2xl">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-amber-300 drop-shadow-sm">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-100 hover:text-white text-xs font-bold shadow-md transition transform hover:scale-102 active:scale-95 border border-white/10"
+              title="Visit Main Website"
+            >
+              <ExternalLink className="w-4 h-4 text-amber-400" />
+              <span>Website</span>
+            </Link>
+          </div>
+
+          {/* Video / Lesson Title */}
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight text-white drop-shadow-sm mt-5">
             {item.title}
           </h1>
-          {item.bookTitle && (
-            <p className="text-xs sm:text-sm text-slate-400 font-medium mt-1">
-              বই: <span className="text-slate-200 font-bold">{item.bookTitle}</span>
-            </p>
+          {item.pageNumber && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-400/40 text-emerald-300 text-xs font-black shadow-md">
+              <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+              <span>পৃষ্ঠা নং: {item.pageNumber}</span>
+            </div>
           )}
         </div>
 
@@ -278,29 +291,7 @@ export default function MediaViewerPage() {
           </div>
         )}
 
-        {/* Association Link Banner */}
-        <div className="mt-5 w-full bg-gradient-to-r from-blue-950/60 via-indigo-950/70 to-slate-900/80 border border-blue-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            {storeLogo ? (
-              <img src={storeLogo} alt="Logo" className="w-10 h-10 rounded-full ring-2 ring-amber-400/60 shadow-md shrink-0" />
-            ) : (
-              <Award className="w-8 h-8 text-amber-400 shrink-0" />
-            )}
-            <div>
-              <h4 className="text-sm font-bold text-white">বাংলাদেশ হ্যান্ডরাইটিং এসোসিয়েশন</h4>
-              <p className="text-xs text-blue-200/80">হাতের লেখা বিষয়ক আপডেট ও ক্লাসের জন্য অফিসিয়াল পেজ ফলো করুন</p>
-            </div>
-          </div>
-          <a
-            href={fbLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 transition shrink-0"
-          >
-            <span>ফেসবুক পেজ দেখুন</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
+
 
         {/* Related / More Videos Section */}
         {relatedVideos.length > 0 && (
