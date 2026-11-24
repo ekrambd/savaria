@@ -31,6 +31,9 @@ export const MediaQrManager: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadSpeed, setUploadSpeed] = useState<string>('');
+  const [uploadEta, setUploadEta] = useState<string>('');
+  const [uploadSizeText, setUploadSizeText] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Pagination State
@@ -84,28 +87,91 @@ export const MediaQrManager: React.FC = () => {
 
     try {
       setUploading(true);
-      setUploadProgress(10);
+      setUploadProgress(0);
+      setUploadSpeed('');
+      setUploadEta('');
+
+      const totalBytes = file.size;
+      const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+      setUploadSizeText(`0 MB / ${totalMb} MB`);
+
       const formData = new FormData();
       formData.append('file', file);
-
-      const interval = setInterval(() => {
-        setUploadProgress(prev => (prev < 90 ? prev + 15 : prev));
-      }, 300);
 
       const authHeaders = getAdminAuthHeaders();
       delete (authHeaders as any)['Content-Type'];
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: authHeaders,
-        body: formData,
+      const uploadStartTime = Date.now();
+
+      // Real calculation using XMLHttpRequest with upload progress events
+      const data: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload', true);
+
+        // Set auth headers
+        Object.entries(authHeaders).forEach(([key, val]) => {
+          if (val) xhr.setRequestHeader(key, String(val));
+        });
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const loaded = event.loaded;
+            const total = event.total;
+            const percent = Math.min(99, Math.round((loaded / total) * 100));
+            setUploadProgress(percent);
+
+            const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
+            const totalMbFormatted = (total / (1024 * 1024)).toFixed(1);
+            setUploadSizeText(`${loadedMb} MB / ${totalMbFormatted} MB`);
+
+            const elapsedSec = (Date.now() - uploadStartTime) / 1000;
+            if (elapsedSec > 0.5 && loaded > 0) {
+              const bytesPerSec = loaded / elapsedSec;
+              const mbPerSec = (bytesPerSec / (1024 * 1024)).toFixed(1);
+              setUploadSpeed(`${mbPerSec} MB/s`);
+
+              const remainingBytes = total - loaded;
+              const remainingSec = Math.round(remainingBytes / bytesPerSec);
+              if (remainingSec < 60) {
+                setUploadEta(`~${remainingSec}s বাকি`);
+              } else {
+                const mins = Math.floor(remainingSec / 60);
+                const secs = remainingSec % 60;
+                setUploadEta(`~${mins}m ${secs}s বাকি`);
+              }
+            }
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const resJson = JSON.parse(xhr.responseText);
+              setUploadProgress(100);
+              resolve(resJson);
+            } catch (parseErr) {
+              reject(new Error('Invalid server response'));
+            }
+          } else {
+            let errorMsg = `Upload failed (${xhr.status})`;
+            try {
+              const resJson = JSON.parse(xhr.responseText);
+              if (resJson.error) errorMsg = resJson.error;
+            } catch {}
+            reject(new Error(errorMsg));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Network error during upload. Please check connection.'));
+        };
+
+        xhr.ontimeout = () => {
+          reject(new Error('Upload timed out.'));
+        };
+
+        xhr.send(formData);
       });
-
-      clearInterval(interval);
-      setUploadProgress(100);
-
-      if (!res.ok) throw new Error('File upload failed');
-      const data = await res.json();
       
       const fileUrl = data.url || (data.filename ? `/uploads/${data.filename}` : '');
       setMediaUrl(fileUrl);
@@ -123,6 +189,8 @@ export const MediaQrManager: React.FC = () => {
       alert('Upload failed: ' + (err.message || 'Unknown error'));
     } finally {
       setUploading(false);
+      setUploadSpeed('');
+      setUploadEta('');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -517,11 +585,33 @@ export const MediaQrManager: React.FC = () => {
                 </div>
 
                 {uploading && (
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2 overflow-hidden">
-                    <div
-                      className="bg-emerald-600 h-1.5 transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
+                  <div className="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-emerald-900 flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5 animate-bounce text-emerald-600" />
+                        ভিডিও ক্লাউডফ্লেয়ার R2-এ আপলোড হচ্ছে...
+                      </span>
+                      <span className="font-mono text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-300">
+                        {uploadProgress}%
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-emerald-200/60 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-emerald-600 h-2.5 transition-all duration-150 rounded-full"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+
+                    {/* Real calculation details: Size, Speed, ETA */}
+                    <div className="flex items-center justify-between text-[11px] text-emerald-800 font-medium">
+                      <span>{uploadSizeText}</span>
+                      <div className="flex items-center gap-2">
+                        {uploadSpeed && <span className="font-mono bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">{uploadSpeed}</span>}
+                        {uploadEta && <span className="font-semibold text-emerald-700">{uploadEta}</span>}
+                      </div>
+                    </div>
                   </div>
                 )}
 
