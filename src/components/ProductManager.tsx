@@ -15,7 +15,7 @@ import { getProductSlug, slugifyProductText } from '../lib/seoUtils';
 import { FeedbackDialog } from './ui/FeedbackDialog';
 import { exportProductsToExcel, downloadProductExcelTemplate, parseProductExcel } from '../lib/productExcelService';
 
-type DetailTab = 'title-summary' | 'price' | 'category' | 'image' | 'video' | 'specifications' | 'publishing';
+type DetailTab = 'title-summary' | 'price' | 'category' | 'image' | 'video' | 'publishing';
 
 interface ProductManagerProps {
   products: Product[];
@@ -1874,17 +1874,6 @@ export default function ProductManager({
 
               <button
                 type="button"
-                onClick={() => setActiveTab('specifications')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'specifications' ? 'bg-teal-700 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <List className="h-4 w-4" />
-                <span>Specs & Features</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setActiveTab('publishing')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'publishing' ? 'bg-teal-700 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
@@ -3107,7 +3096,7 @@ export default function ProductManager({
                           Enable Product Video on Details Page
                         </span>
                         <span className="text-[10px] text-slate-500">
-                          Displays the dedicated "Product Video" tab and video thumbnail in the gallery
+                          Displays video player and video thumbnail on the product page
                         </span>
                       </div>
                     </label>
@@ -3123,7 +3112,7 @@ export default function ProductManager({
                               onChange={(e) => setVideoType(e.target.value as any)}
                               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
                             >
-                              <option value="mp4">Direct MP4 / WebM Video</option>
+                              <option value="mp4">Upload Direct MP4 Video / Link</option>
                               <option value="youtube">YouTube Embed URL</option>
                               <option value="vimeo">Vimeo Video</option>
                             </select>
@@ -3131,40 +3120,51 @@ export default function ProductManager({
 
                           <div className="sm:col-span-2">
                             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                              Video URL Link *
+                              {videoType === 'youtube' ? 'YouTube URL Link *' : 'Video File Upload / Direct Link *'}
                             </label>
                             <div className="flex gap-2">
                               <input
                                 type="text"
                                 value={videoUrl}
                                 onChange={(e) => setVideoUrl(e.target.value)}
-                                placeholder={videoType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'https://example.com/video.mp4'}
+                                placeholder={videoType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'Upload video below or paste MP4 link'}
                                 className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                               />
 
                               {videoType === 'mp4' && (
-                                <label className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0">
+                                <label className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm transition">
                                   {isUploadingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                                   <input 
                                     type="file" 
-                                    accept="video/*" 
+                                    accept="video/mp4,video/webm,video/quicktime,video/*" 
                                     onChange={async (e) => {
                                       const file = e.target.files?.[0];
                                       if (!file) return;
                                       setIsUploadingVideo(true);
                                       try {
-                                        const dest = `products/video-${Date.now()}-${file.name}`;
-                                        const url = await uploadFileToStorage(file, dest);
-                                        setVideoUrl(url);
-                                      } catch (err) {
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        const res = await fetch('/api/upload', {
+                                          method: 'POST',
+                                          body: formData
+                                        });
+                                        if (!res.ok) throw new Error('Video upload failed');
+                                        const data = await res.json();
+                                        const uploadedUrl = data.url || (data.filename ? `/uploads/${data.filename}` : '');
+                                        setVideoUrl(uploadedUrl);
+                                        if (!videoTitle) {
+                                          setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
+                                        }
+                                      } catch (err: any) {
                                         console.error('Video upload failed:', err);
+                                        alert('Video upload error: ' + (err.message || 'Failed'));
                                       } finally {
                                         setIsUploadingVideo(false);
                                       }
                                     }}
                                     className="hidden" 
                                   />
-                                  <span>{isUploadingVideo ? 'Uploading...' : 'Upload MP4'}</span>
+                                  <span>{isUploadingVideo ? 'Uploading...' : 'ভিডিও ফাইল আপলোড'}</span>
                                 </label>
                               )}
                             </div>
@@ -3232,294 +3232,6 @@ export default function ProductManager({
                         )}
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 6: SPECIFICATIONS & FEATURES (Matching Screenshots 1, 2, 3) */}
-              {activeTab === 'specifications' && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-6">
-                    
-                    {/* SECTION 1: SPECIFICATION TABLE BUILDER (Screenshot 3) */}
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                            <List className="h-4 w-4 text-teal-600" />
-                            <span>Feature & Details Table (Main Product Overview)</span>
-                          </h4>
-                          <p className="text-[10px] text-slate-500">
-                            The 2-column table on the right side of the cover image (Screenshot 3).
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSpecTableRows(prev => [...prev, { feature: '', details: '' }]);
-                            }}
-                            className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-[11px] font-bold rounded-lg transition"
-                          >
-                            + Add Row
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {specTableRows.map((row, idx) => (
-                          <div key={idx} className="flex gap-2 items-start bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                            <input
-                              type="text"
-                              value={row.feature}
-                              onChange={(e) => {
-                                const copy = [...specTableRows];
-                                copy[idx].feature = e.target.value;
-                                setSpecTableRows(copy);
-                              }}
-                              placeholder="Feature (e.g. MOQ)"
-                              className="w-1/3 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
-                            />
-
-                            <textarea
-                              rows={2}
-                              value={row.details}
-                              onChange={(e) => {
-                                const copy = [...specTableRows];
-                                copy[idx].details = e.target.value;
-                                setSpecTableRows(copy);
-                              }}
-                              placeholder="Details (e.g. 100% Organic Cotton / All Skin Types)"
-                              className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() => setSpecTableRows(prev => prev.filter((_, i) => i !== idx))}
-                              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
-                              title="Delete Row"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* SECTION 2: TAB 1 - DETAILED NUMBERED SPECIFICATIONS (Screenshot 2) */}
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                            <BookOpen className="h-4 w-4 text-teal-600" />
-                            <span>Tab 1: Product Specifications (1-6 Numbered Points)</span>
-                          </h4>
-                          <p className="text-[10px] text-slate-500">
-                            Shown under "Product Specification" tab (Screenshot 2).
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSpecificationsList(prev => [...prev, { title: `${prev.length + 1}. `, description: '' }]);
-                            }}
-                            className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-[11px] font-bold rounded-lg transition"
-                          >
-                            + Add Item
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {specificationsList.map((item, idx) => (
-                          <div key={idx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <input
-                                type="text"
-                                value={item.title}
-                                onChange={(e) => {
-                                  const copy = [...specificationsList];
-                                  copy[idx].title = e.target.value;
-                                  setSpecificationsList(copy);
-                                }}
-                                placeholder="Heading (e.g. 1. Key Feature / Specification)"
-                                className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setSpecificationsList(prev => prev.filter((_, i) => i !== idx))}
-                                className="ml-2 p-1 text-rose-500 hover:bg-rose-50 rounded cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                            <textarea
-                              rows={2}
-                              value={item.description}
-                              onChange={(e) => {
-                                const copy = [...specificationsList];
-                                copy[idx].description = e.target.value;
-                                setSpecificationsList(copy);
-                              }}
-                              placeholder="Description..."
-                              className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* SECTION 3: TAB 2 - KEY FEATURES CARDS (Screenshot 1) */}
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                            <Sparkles className="h-4 w-4 text-teal-600" />
-                            <span>Tab 2: Key Features Cards (with Circular Blue Icons)</span>
-                          </h4>
-                          <p className="text-[10px] text-slate-500">
-                            Shown under "Key Features" tab (Screenshot 1).
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setKeyFeatureCards(prev => [...prev, { icon: 'globe', title: '', description: '' }]);
-                            }}
-                            className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-[11px] font-bold rounded-lg transition"
-                          >
-                            + Add Card
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        {keyFeatureCards.map((card, idx) => (
-                          <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <select
-                                value={card.icon}
-                                onChange={(e) => {
-                                  const copy = [...keyFeatureCards];
-                                  copy[idx].icon = e.target.value;
-                                  setKeyFeatureCards(copy);
-                                }}
-                                className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold"
-                              >
-                                <option value="globe">🌐 Globe / Partnership</option>
-                                <option value="clock">⏱ Clock / Retention</option>
-                                <option value="box">📦 Box / Capacity</option>
-                                <option value="check">📋 Checklist / QC</option>
-                                <option value="shield">🛡️ Shield / Defense</option>
-                              </select>
-
-                              <input
-                                type="text"
-                                value={card.title}
-                                onChange={(e) => {
-                                  const copy = [...keyFeatureCards];
-                                  copy[idx].title = e.target.value;
-                                  setKeyFeatureCards(copy);
-                                }}
-                                placeholder="Feature Title"
-                                className="flex-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold"
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() => setKeyFeatureCards(prev => prev.filter((_, i) => i !== idx))}
-                                className="p-1 text-rose-500 hover:bg-rose-50 rounded cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-
-                            <textarea
-                              rows={2}
-                              value={card.description}
-                              onChange={(e) => {
-                                const copy = [...keyFeatureCards];
-                                copy[idx].description = e.target.value;
-                                setKeyFeatureCards(copy);
-                              }}
-                              placeholder="Full Feature Description..."
-                              className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* SECTION 4: WHATSAPP, EMAIL & SOCIAL INQUIRY SETUP */}
-                    <div className="pt-4 border-t border-slate-100 space-y-3">
-                      <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                        <MessageSquare className="h-4 w-4 text-teal-600" />
-                        <span>Quick Contact & WhatsApp Inquiry Settings</span>
-                      </h4>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">WhatsApp Number (International format)</label>
-                          <input
-                            type="text"
-                            value={whatsappNumber}
-                            onChange={(e) => setWhatsappNumber(e.target.value)}
-                            placeholder="+880 1700-000000"
-                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Contact Email</label>
-                          <input
-                            type="email"
-                            value={contactEmail}
-                            onChange={(e) => setContactEmail(e.target.value)}
-                            placeholder="contact@yourstore.com"
-                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Pre-filled WhatsApp Message</label>
-                          <input
-                            type="text"
-                            value={whatsappMessage}
-                            onChange={(e) => setWhatsappMessage(e.target.value)}
-                            placeholder="Hello! I would like to inquire about this product."
-                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Facebook URL</label>
-                          <input
-                            type="text"
-                            value={facebookUrl}
-                            onChange={(e) => setFacebookUrl(e.target.value)}
-                            placeholder="https://facebook.com"
-                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">LinkedIn URL</label>
-                          <input
-                            type="text"
-                            value={linkedinUrl}
-                            onChange={(e) => setLinkedinUrl(e.target.value)}
-                            placeholder="https://linkedin.com"
-                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
                   </div>
                 </div>
               )}
