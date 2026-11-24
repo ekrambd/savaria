@@ -40,7 +40,7 @@ export const PdfSampleReader: React.FC<PdfSampleReaderProps> = ({
       // Fast loader simulation / initial buffer
       const timer = setTimeout(() => {
         setIsLoading(false);
-      }, isImageMode ? 200 : 700);
+      }, 150);
 
       return () => {
         clearTimeout(timer);
