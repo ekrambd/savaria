@@ -2480,13 +2480,9 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
             {/* LEFT COLUMN: Gallery with Red Discount Badge and Bottom Thumbnail Carousel */}
             <div className="lg:col-span-5 space-y-3.5">
               
-              {/* Main Product Frame */}
+              {/* Main Product Frame (No hover zoom) */}
               <div 
-                onMouseEnter={() => setIsHoverZooming(true)}
-                onMouseLeave={() => setIsHoverZooming(false)}
-                onMouseMove={handleProductImageMouseMove}
-                className="relative aspect-square w-full bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex items-center justify-center p-3 select-none cursor-crosshair group"
-                title="Hover cursor to zoom in details"
+                className="relative aspect-square w-full bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex items-center justify-center p-3 select-none group"
               >
                 {/* Red Discount Badge at Top-Left (e.g. 400৳ OFF) */}
                 {(() => {
@@ -2509,16 +2505,11 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
                   height={500} 
                   src={currentProductImages[activeImageIndex] || activeProductDetail.coverImage} 
                   alt={activeProductDetail.title} 
-                  style={{
-                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                    transform: isHoverZooming ? 'scale(2.2)' : 'scale(1)',
-                    transition: isHoverZooming ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                  }}
                   onError={(e) => {
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = DEFAULT_PRODUCT_FALLBACK_IMAGE;
                   }}
-                  className="w-full h-full object-contain select-none pointer-events-none will-change-transform"
+                  className="w-full h-full object-contain select-none pointer-events-none"
                 />
 
                 {/* Fullscreen Zoom trigger button */}

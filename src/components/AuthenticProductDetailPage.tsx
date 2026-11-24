@@ -591,20 +591,12 @@ export default function AuthenticProductDetailPage({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.02 }}
                     transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-full h-full flex items-center justify-center relative overflow-hidden select-none cursor-crosshair"
-                    onMouseEnter={() => setIsHoverZoom(true)}
-                    onMouseLeave={() => setIsHoverZoom(false)}
-                    onMouseMove={handleImageMouseMove}
+                    className="w-full h-full flex items-center justify-center relative overflow-hidden select-none"
                   >
                     <img 
                       src={allImages[activeImageIndex] || product.coverImage} 
                       alt={product.title}
-                      className="w-full h-full object-cover sm:object-contain will-change-transform pointer-events-none"
-                      style={{
-                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                        transform: isHoverZoom ? 'scale(2.2)' : 'scale(1)',
-                        transition: isHoverZoom ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                      }}
+                      className="w-full h-full object-cover sm:object-contain pointer-events-none"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = '/authentic/pod_triple_chamber_main.png';
