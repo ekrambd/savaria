@@ -229,50 +229,31 @@ export const MediaQrManager: React.FC = () => {
     }
   };
 
-  const downloadHighResQr = (item: MediaQrItem) => {
-    if (!qrDataUrl) return;
+  // Download 100% Pure, Ultra High-Resolution (1200x1200px) QR Code only for sharp printing on books
+  const downloadHighResQr = async (item: MediaQrItem) => {
+    const targetUrl = `${window.location.origin}/v/${item.shortCode}`;
+    try {
+      // 1200x1200px crystal clear 300+ DPI vector-crisp QR code
+      const pureQrDataUrl = await QRCode.toDataURL(targetUrl, {
+        width: 1200,
+        margin: 1, // Minimal margin for maximum QR size
+        errorCorrectionLevel: 'H', // Highest error correction for flawless scanning even if worn
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = 650;
-    canvas.height = 780;
-
-    // Background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      // Draw QR in center
-      ctx.drawImage(img, 25, 30, 600, 600);
-
-      // Book Name & Page text
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#111827';
-      ctx.font = 'bold 26px sans-serif';
-      const label1 = item.bookTitle || 'Savaria BD Learning';
-      ctx.fillText(label1, 325, 665);
-
-      ctx.fillStyle = '#16a34a';
-      ctx.font = 'bold 22px sans-serif';
-      const label2 = item.pageNumber ? `${item.pageNumber} • ${item.title}` : item.title;
-      ctx.fillText(label2, 325, 705);
-
-      // URL subtext
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '16px monospace';
-      ctx.fillText(`savariabd.com/v/${item.shortCode}`, 325, 745);
-
-      // Download
       const link = document.createElement('a');
-      link.download = `QR-${item.shortCode}-${(item.pageNumber || 'lesson').replace(/\s+/g, '_')}.png`;
-      link.href = canvas.toDataURL('image/png');
+      const bookPrefix = (item.bookTitle || 'book').replace(/\s+/g, '_');
+      const pagePrefix = (item.pageNumber || 'lesson').replace(/\s+/g, '_');
+      link.download = `QR-${item.shortCode}-${pagePrefix}.png`;
+      link.href = pureQrDataUrl;
       link.click();
-    };
-    img.src = qrDataUrl;
+    } catch (e) {
+      console.error('Error generating pure high-res QR for download:', e);
+      alert('QR Download failed');
+    }
   };
 
   const printQr = () => {
