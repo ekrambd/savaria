@@ -2266,23 +2266,25 @@ export default function StorefrontPage({ onGoToLogin, onGoToLanding }: Storefron
           ============================================================ */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 select-none w-full transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between gap-4">
-          {/* Logo (Left - Clean & Bold like VENT) */}
+          {/* Logo & Brand Name (Left - Clean & Balanced, both Logo & Text fit perfectly) */}
           <div 
-            className="flex items-center gap-2 cursor-pointer shrink-0 transition-transform hover:opacity-90 select-none" 
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer shrink-0 transition-transform hover:opacity-90 select-none max-w-[280px] sm:max-w-[420px]" 
             onClick={() => navigateTo('home')}
           >
-            {storeLogoFailed ? (
-              <span className="font-sans font-black text-2xl sm:text-3xl tracking-tight text-slate-900 uppercase leading-none">
-                {displayStoreName ? displayStoreName.toUpperCase() : 'SAVARIA'}
-              </span>
-            ) : (
+            {/* Store Logo Image */}
+            {displayStoreLogo && !storeLogoFailed && (
               <img 
-                src={displayStoreLogo || liveHeaderSettings.logoUrl || '/uploads/file-1793773029433-548634670.webp'} 
+                src={displayStoreLogo} 
                 alt={displayStoreName} 
-                className="h-7 sm:h-9 md:h-10 w-auto object-contain shrink-0"
+                className="h-8 sm:h-10 md:h-11 w-auto max-w-[45px] sm:max-w-[55px] object-contain shrink-0 rounded-md"
                 onError={() => setStoreLogoFailed(true)}
               />
             )}
+
+            {/* Brand Title (Well-proportioned & responsive) */}
+            <span className="font-sans font-black text-xs sm:text-sm md:text-base lg:text-[17px] tracking-tight text-slate-900 uppercase leading-snug line-clamp-2">
+              {displayStoreName || 'Bangladesh Handwriting Association'}
+            </span>
           </div>
 
           {/* Navigation Items (Center - ALL PRODUCTS, CATEGORIES, NEW ARRIVALS) */}
