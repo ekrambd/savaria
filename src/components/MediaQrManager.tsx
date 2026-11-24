@@ -20,7 +20,7 @@ import {
   Eye
 } from 'lucide-react';
 import { MediaQrItem } from '../types';
-import { getMediaQrItems, createMediaQrItem, deleteMediaQrItem } from '../lib/dbService';
+import { dbService } from '../lib/dbService';
 
 export const MediaQrManager: React.FC = () => {
   const [items, setItems] = useState<MediaQrItem[]>([]);
@@ -48,7 +48,7 @@ export const MediaQrManager: React.FC = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await getMediaQrItems();
+      const res = await dbService.getMediaQrItems();
       setItems(res || []);
     } catch (e) {
       console.error('Failed to load media QR items:', e);
@@ -129,7 +129,7 @@ export const MediaQrManager: React.FC = () => {
 
     try {
       setSaving(true);
-      await createMediaQrItem({
+      await dbService.saveMediaQrItem({
         title: title.trim(),
         bookTitle: bookTitle.trim() || undefined,
         pageNumber: pageNumber.trim() || undefined,
@@ -156,7 +156,7 @@ export const MediaQrManager: React.FC = () => {
   const handleDelete = async (id: string, code: string) => {
     if (!confirm(`Are you sure you want to delete QR code "${code}"?`)) return;
     try {
-      await deleteMediaQrItem(id);
+      await dbService.deleteMediaQrItem(id);
       setItems(prev => prev.filter(i => i.id !== id));
     } catch (err: any) {
       alert('Failed to delete item: ' + (err.message || 'Error'));
