@@ -41,6 +41,8 @@ export const MediaQrManager: React.FC = () => {
 
   // Edit Mode State
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Modal Dialog Open/Close State
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState<boolean>(false);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -340,9 +342,12 @@ export const MediaQrManager: React.FC = () => {
     setMediaUrl(item.youtubeUrl || item.fileUrl || '');
     setCustomShortCode(item.shortCode);
     setDescription(item.description || '');
+    setIsFormDialogOpen(true);
+  };
 
-    // Scroll smoothly to form
-    window.scrollTo({ top: 100, behavior: 'smooth' });
+  const openCreateDialog = () => {
+    cancelEdit();
+    setIsFormDialogOpen(true);
   };
 
   const cancelEdit = () => {
@@ -352,6 +357,7 @@ export const MediaQrManager: React.FC = () => {
     setMediaUrl('');
     setCustomShortCode('');
     setDescription('');
+    setIsFormDialogOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -542,311 +548,64 @@ export const MediaQrManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Creation & Edit Form */}
-        <div className="lg:col-span-5 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              {editingId ? (
-                <>
-                  <Edit className="w-5 h-5 text-amber-600" />
-                  QR কোড এডিট করুন
-                </>
-              ) : (
-                <>
-                  <Plus className="w-5 h-5 text-emerald-600" />
-                  নতুন QR কোড তৈরি করুন
-                </>
-              )}
-            </h2>
-            {editingId && (
-              <button
-                type="button"
-                onClick={cancelEdit}
-                className="text-xs text-gray-500 hover:text-rose-600 font-semibold flex items-center gap-1"
-              >
-                <X className="w-4 h-4" />
-                বাতিল করুন
-              </button>
-            )}
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Book Name & Page */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  বইয়ের নাম (Book)
-                </label>
-                <input
-                  type="text"
-                  value={bookTitle}
-                  onChange={e => setBookTitle(e.target.value)}
-                  placeholder="হাতের লেখার বই"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  পৃষ্ঠা নম্বর (Page)
-                </label>
-                <input
-                  type="text"
-                  value={pageNumber}
-                  onChange={e => setPageNumber(e.target.value)}
-                  placeholder="যেমন: ১ বা Page 1"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Lesson Title */}
+      {/* Full-width Clean QR Code Table / List */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <div>
+          {/* List Header with prominent Add Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-gray-100">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                লেসন বা ভিডিওর শিরোনাম (Lesson Title) *
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="যেমন: বর্ণমালা 'ক' ও 'খ' লেখার সঠিক নিয়ম"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Media Type Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                মিডিয়া টাইপ (Media Type)
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMediaType('video')}
-                  className={`py-2 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                    mediaType === 'video'
-                      ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 font-bold'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  MP4 Video
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMediaType('youtube')}
-                  className={`py-2 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                    mediaType === 'youtube'
-                      ? 'bg-red-50 text-red-700 border-2 border-red-500 font-bold'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <Youtube className="w-3.5 h-3.5" />
-                  YouTube
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMediaType('image')}
-                  className={`py-2 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                    mediaType === 'image'
-                      ? 'bg-blue-50 text-blue-700 border-2 border-blue-500 font-bold'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  Image
-                </button>
-              </div>
-            </div>
-
-            {/* Upload or Link Input */}
-            {mediaType === 'youtube' ? (
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  YouTube Video Link / URL *
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={mediaUrl}
-                  onChange={e => setMediaUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=... or youtu.be/..."
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  ফাইল আপলোড করুন (File Upload - Max 1GB / Cloudflare R2) *
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept={mediaType === 'video' ? 'video/mp4,video/webm,video/quicktime' : 'image/*'}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="media-file-input"
-                  />
-                  <label
-                    htmlFor="media-file-input"
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl cursor-pointer text-xs font-medium transition-all ${
-                      uploading
-                        ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
-                        : 'border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-50 hover:border-emerald-500'
-                    }`}
-                  >
-                    <Upload className="w-4 h-4 text-emerald-600" />
-                    {uploading ? `Uploading... ${uploadProgress}%` : mediaUrl ? 'Change Uploaded File' : 'ভিডিও বা ছবি সিলেক্ট করুন'}
-                  </label>
-                </div>
-
-                {uploading && (
-                  <div className="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-emerald-900 flex items-center gap-1.5">
-                        <Upload className="w-3.5 h-3.5 animate-bounce text-emerald-600" />
-                        ভিডিও ক্লাউডফ্লেয়ার R2-এ আপলোড হচ্ছে...
-                      </span>
-                      <span className="font-mono text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-300">
-                        {uploadProgress}%
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-emerald-200/60 rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className="bg-emerald-600 h-2.5 transition-all duration-150 rounded-full"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-
-                    {/* Real calculation details: Size, Speed, ETA */}
-                    <div className="flex items-center justify-between text-[11px] text-emerald-800 font-medium">
-                      <span>{uploadSizeText}</span>
-                      <div className="flex items-center gap-2">
-                        {uploadSpeed && <span className="font-mono bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">{uploadSpeed}</span>}
-                        {uploadEta && <span className="font-semibold text-emerald-700">{uploadEta}</span>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {mediaUrl && (
-                  <div className="mt-2 text-xs text-gray-600 truncate bg-gray-50 p-2 rounded border border-gray-200">
-                    Uploaded: <span className="font-mono text-emerald-700">{mediaUrl}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Custom Short Code */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-gray-700">
-                  শর্ট কোড (Custom Short Code - Optional)
-                </label>
-                {!editingId && (
-                  <button
-                    type="button"
-                    onClick={handleGenerateShortCode}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    অটো তৈরি
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center">
-                <span className="px-2.5 py-2 text-xs text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg select-none">
-                  {typeof window !== 'undefined' ? `${window.location.host}/learn/` : 'handwriting-book.com/learn/'}
-                </span>
-                <input
-                  type="text"
-                  value={customShortCode}
-                  onChange={e => {
-                    // Support Bangla (Unicode), English, numbers, hyphens, underscores
-                    const sanitized = e.target.value
-                      .toLowerCase()
-                      .replace(/[\s/\\?#%&+=@!$^&*()~`'"|<>:;{}[\]]+/g, '-');
-                    setCustomShortCode(sanitized);
-                  }}
-                  placeholder="যেমন: hw-p1 বা বাংলা-১"
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
-                />
-              </div>
-              <p className="text-[11px] text-gray-400 mt-1">
-                খালি রাখলে স্বয়ংক্রিয়ভাবে একটি ইউনিক ছোট লিংক তৈরি হবে।
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <BookOpen className="w-6 h-6 text-emerald-600" />
+                বইয়ের সমস্ত QR কোডের তালিকা ({items.length})
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                প্রতি পেজে {ITEMS_PER_PAGE} টি করে QR কোড প্রদর্শিত হচ্ছে
               </p>
             </div>
 
-            {/* Description / Instructions */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                সংক্ষিপ্ত বিবরণ বা নির্দেশনা (Optional)
-              </label>
-              <textarea
-                rows={2}
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="যেমন: ভিডিওটি মনোযোগ দিয়ে দেখে ৩ বার অনুশীলন করো..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving || uploading}
-              className={`w-full py-3 px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all ${
-                saving || uploading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : editingId
-                    ? 'bg-amber-600 hover:bg-amber-700 active:scale-[0.99]'
-                    : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]'
-              }`}
-            >
-              <QrCode className="w-4 h-4" />
-              {saving ? 'সংরক্ষণ হচ্ছে...' : editingId ? 'পরিবর্তন সংরক্ষণ করুন' : 'QR কোড তৈরি করুন'}
-            </button>
-          </form>
-        </div>
-
-        {/* Existing QR Codes List with Pagination */}
-        <div className="lg:col-span-7 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-emerald-600" />
-                  বইয়ের সমস্ত QR কোডের তালিকা ({items.length})
-                </h2>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  প্রতি পেজে {ITEMS_PER_PAGE} টি করে QR কোড প্রদর্শিত হচ্ছে
-                </p>
-              </div>
+            <div className="flex items-center gap-2.5">
               <button
+                type="button"
                 onClick={fetchItems}
-                className="text-xs text-emerald-600 hover:underline font-semibold"
+                className="px-3 py-2 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+                title="Refresh list"
               >
                 Refresh
               </button>
-            </div>
 
-            {loading ? (
-              <div className="py-16 text-center text-gray-400">
-                <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-3" />
-                <p className="text-sm">লোড হচ্ছে...</p>
-              </div>
-            ) : items.length === 0 ? (
-              <div className="py-16 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                <QrCode className="w-12 h-12 mx-auto text-gray-300 mb-2" />
-                <p className="text-sm font-semibold text-gray-600">কোনো QR কোড এখনও তৈরি করা হয়নি</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  বামে ফর্ম পূরণ করে আপনার বইয়ের প্রথম ভিডিও ও QR কোড তৈরি করুন
-                </p>
-              </div>
-            ) : (
+              <button
+                type="button"
+                onClick={openCreateDialog}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>নতুন QR যোগ করুন</span>
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="py-20 text-center text-gray-400">
+              <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full mx-auto mb-3" />
+              <p className="text-sm">লোড হচ্ছে...</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <QrCode className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+              <p className="text-sm font-semibold text-gray-600">কোনো QR কোড এখনও তৈরি করা হয়নি</p>
+              <p className="text-xs text-gray-400 mt-1 mb-4">
+                "নতুন QR যোগ করুন" বাটনে ক্লিক করে বইয়ের পাতার জন্য ভিডিও ও QR কোড তৈরি করুন
+              </p>
+              <button
+                type="button"
+                onClick={openCreateDialog}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>প্রথম QR কোড তৈরি করুন</span>
+              </button>
+            </div>
+          ) : (
               <div className="space-y-3">
                 {currentItems.map((item, idx) => {
                   const globalIndex = startIndex + idx + 1;
@@ -1008,6 +767,298 @@ export const MediaQrManager: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* ============================================================
+          CREATE / EDIT QR CODE MODAL DIALOG
+          ============================================================ */}
+      {isFormDialogOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl relative my-8 border border-gray-100 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2">
+                {editingId ? (
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <Edit className="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                    {editingId ? 'QR কোড এডিট করুন' : 'নতুন QR কোড তৈরি করুন'}
+                  </h3>
+                  <p className="text-[11px] text-gray-500">
+                    বইয়ের নাম, পৃষ্ঠা এবং ভিডিও/ছবি নির্বাচন করে সেভ করুন
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Book Name & Page */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    বইয়ের নাম (Book)
+                  </label>
+                  <input
+                    type="text"
+                    value={bookTitle}
+                    onChange={e => setBookTitle(e.target.value)}
+                    placeholder="হাতের লেখার বই"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    পৃষ্ঠা নম্বর (Page)
+                  </label>
+                  <input
+                    type="text"
+                    value={pageNumber}
+                    onChange={e => setPageNumber(e.target.value)}
+                    placeholder="যেমন: ১ বা Page 1"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Lesson Title */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  লেসন বা ভিডিওর শিরোনাম (Lesson Title) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="যেমন: বর্ণমালা 'ক' ও 'খ' লেখার সঠিক নিয়ম"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Media Type Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  মিডিয়া টাইপ (Media Type)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMediaType('video')}
+                    className={`py-2 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      mediaType === 'video'
+                        ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-500 font-bold'
+                        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    MP4 Video
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMediaType('youtube')}
+                    className={`py-2 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      mediaType === 'youtube'
+                        ? 'bg-red-50 text-red-700 border-2 border-red-500 font-bold'
+                        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Youtube className="w-3.5 h-3.5" />
+                    YouTube
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMediaType('image')}
+                    className={`py-2 px-3 text-xs font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      mediaType === 'image'
+                        ? 'bg-blue-50 text-blue-700 border-2 border-blue-500 font-bold'
+                        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    Image
+                  </button>
+                </div>
+              </div>
+
+              {/* Upload or Link Input */}
+              {mediaType === 'youtube' ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    YouTube Video Link / URL *
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    value={mediaUrl}
+                    onChange={e => setMediaUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=... or youtu.be/..."
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    ফাইল আপলোড করুন (File Upload - Max 1.5GB / Cloudflare R2) *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept={mediaType === 'video' ? 'video/mp4,video/webm,video/quicktime' : 'image/*'}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="media-file-input"
+                    />
+                    <label
+                      htmlFor="media-file-input"
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl cursor-pointer text-xs font-medium transition-all ${
+                        uploading
+                          ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                          : 'border-emerald-300 bg-emerald-50/50 text-emerald-800 hover:bg-emerald-50 hover:border-emerald-500'
+                      }`}
+                    >
+                      <Upload className="w-4 h-4 text-emerald-600" />
+                      {uploading ? `Uploading... ${uploadProgress}%` : mediaUrl ? 'Change Uploaded File' : 'ভিডিও বা ছবি সিলেক্ট করুন'}
+                    </label>
+                  </div>
+
+                  {uploading && (
+                    <div className="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-emerald-900 flex items-center gap-1.5">
+                          <Upload className="w-3.5 h-3.5 animate-bounce text-emerald-600" />
+                          ভিডিও ক্লাউডফ্লেয়ার R2-এ আপলোড হচ্ছে...
+                        </span>
+                        <span className="font-mono text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-300">
+                          {uploadProgress}%
+                        </span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full bg-emerald-200/60 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="bg-emerald-600 h-2.5 transition-all duration-150 rounded-full"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+
+                      {/* Real calculation details: Size, Speed, ETA */}
+                      <div className="flex items-center justify-between text-[11px] text-emerald-800 font-medium">
+                        <span>{uploadSizeText}</span>
+                        <div className="flex items-center gap-2">
+                          {uploadSpeed && <span className="font-mono bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">{uploadSpeed}</span>}
+                          {uploadEta && <span className="font-semibold text-emerald-700">{uploadEta}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {mediaUrl && (
+                    <div className="mt-2 text-xs text-gray-600 truncate bg-gray-50 p-2 rounded border border-gray-200">
+                      Uploaded: <span className="font-mono text-emerald-700">{mediaUrl}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Custom Short Code */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-700">
+                    শর্ট কোড (Custom Short Code - Optional)
+                  </label>
+                  {!editingId && (
+                    <button
+                      type="button"
+                      onClick={handleGenerateShortCode}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      অটো তৈরি
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center">
+                  <span className="px-2.5 py-2 text-xs text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg select-none">
+                    {typeof window !== 'undefined' ? `${window.location.host}/learn/` : 'handwriting-book.com/learn/'}
+                  </span>
+                  <input
+                    type="text"
+                    value={customShortCode}
+                    onChange={e => {
+                      const sanitized = e.target.value
+                        .toLowerCase()
+                        .replace(/[\s/\\?#%&+=@!$^&*()~`'"|<>:;{}[\]]+/g, '-');
+                      setCustomShortCode(sanitized);
+                    }}
+                    placeholder="যেমন: hw-p1 বা বাংলা-১"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  খালি রাখলে স্বয়ংক্রিয়ভাবে একটি ইউনিক ছোট লিংক তৈরি হবে।
+                </p>
+              </div>
+
+              {/* Description / Instructions */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  সংক্ষিপ্ত বিবরণ বা নির্দেশনা (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="যেমন: ভিডিওটি মনোযোগ দিয়ে দেখে ৩ বার অনুশীলন করো..."
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                >
+                  বাতিল করুন
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saving || uploading}
+                  className={`py-2.5 px-5 rounded-xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer ${
+                    saving || uploading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : editingId
+                        ? 'bg-amber-600 hover:bg-amber-700 active:scale-[0.99]'
+                        : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]'
+                  }`}
+                >
+                  <QrCode className="w-4 h-4" />
+                  {saving ? 'সংরক্ষণ হচ্ছে...' : editingId ? 'পরিবর্তন সেভ করুন' : 'তৈরি সম্পন্ন করুন'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* QR Code Export & Print Modal */}
       {selectedItemForPrint && (
