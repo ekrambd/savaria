@@ -542,24 +542,6 @@ export const MediaQrManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <QrCode className="w-7 h-7 text-emerald-200" />
-            <h1 className="text-2xl font-bold tracking-tight">Book Video & QR Generator</h1>
-            <span className="bg-white/20 text-xs px-2.5 py-0.5 rounded-full font-semibold">হাতের লেখার বই</span>
-          </div>
-          <p className="text-emerald-100 text-sm max-w-2xl leading-relaxed">
-            বইয়ের পাতার জন্য ভিডিও/ছবি আপলোড করে স্থায়ী QR কোড তৈরি ও প্রিন্ট করুন। মোবাইল ক্যামেরা বা স্ক্যানার দিয়ে স্ক্যান করলেই শিক্ষার্থী সরাসরি ভিডিও দেখতে পাবে।
-          </p>
-        </div>
-        <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20 text-center min-w-[140px]">
-          <div className="text-2xl font-black">{items.length}</div>
-          <div className="text-xs text-emerald-100 font-medium">Active QR Codes</div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Creation & Edit Form */}
         <div className="lg:col-span-5 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
