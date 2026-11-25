@@ -103,34 +103,107 @@ export const MediaQrManager: React.FC = () => {
 
       const uploadStartTime = Date.now();
 
-      // Real calculation using XMLHttpRequest with upload progress events
-      const data: any = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/upload', true);
+      let data: any = null;
 
-        // Set auth headers
-        Object.entries(authHeaders).forEach(([key, val]) => {
-          if (val) xhr.setRequestHeader(key, String(val));
-        });
+      // For videos >= 25MB, use Resilient Chunked Multipart Upload (8MB per chunk with automatic retries)
+      if (file.size >= 25 * 1024 * 1024) {
+        data = await (async () => {
+          // 1. Initialize Multipart Session
+          const initRes = await fetch('/api/upload/chunk/init', {
+            method: 'POST',
+            headers: {
+              ...authHeaders,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type || 'video/mp4'
+            })
+          });
 
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const loaded = event.loaded;
-            const total = event.total;
-            const percent = Math.min(99, Math.round((loaded / total) * 100));
+          if (!initRes.ok) {
+            throw new Error(`Failed to initialize upload (${initRes.status})`);
+          }
+          const { uploadId, key, filename } = await initRes.json();
+
+          // 2. Upload Chunks (8MB chunks)
+          const CHUNK_SIZE = 8 * 1024 * 1024; // 8MB per chunk
+          const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+          const parts: Array<{ partNumber: number; etag: string }> = [];
+
+          let uploadedBytes = 0;
+
+          for (let index = 0; index < totalChunks; index++) {
+            const start = index * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunkBlob = file.slice(start, end);
+            const partNumber = index + 1;
+
+            // Retry logic: try each chunk up to 3 times
+            let chunkSuccess = false;
+            let lastChunkErr = '';
+
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const chunkFormData = new FormData();
+                chunkFormData.append('uploadId', uploadId);
+                chunkFormData.append('key', key);
+                chunkFormData.append('partNumber', String(partNumber));
+                chunkFormData.append('chunk', chunkBlob);
+
+                const partRes = await fetch('/api/upload/chunk/part', {
+                  method: 'POST',
+                  headers: authHeaders,
+                  body: chunkFormData
+                });
+
+                if (!partRes.ok) {
+                  throw new Error(`Chunk ${partNumber} failed HTTP ${partRes.status}`);
+                }
+
+                const partData = await partRes.json();
+                parts.push({
+                  partNumber,
+                  etag: partData.etag
+                });
+
+                uploadedBytes += (end - start);
+                chunkSuccess = true;
+                break;
+              } catch (err: any) {
+                lastChunkErr = err.message || 'Chunk error';
+                // Wait briefly before retry
+                await new Promise(r => setTimeout(r, 1000 * attempt));
+              }
+            }
+
+            if (!chunkSuccess) {
+              // Abort multipart on hard failure
+              try {
+                await fetch('/api/upload/chunk/abort', {
+                  method: 'POST',
+                  headers: { ...authHeaders, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ uploadId, key })
+                });
+              } catch {}
+              throw new Error(`Upload failed at part ${partNumber}/${totalChunks}: ${lastChunkErr}`);
+            }
+
+            // Update Progress & Speed
+            const percent = Math.min(99, Math.round((uploadedBytes / file.size) * 100));
             setUploadProgress(percent);
 
-            const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
-            const totalMbFormatted = (total / (1024 * 1024)).toFixed(1);
+            const loadedMb = (uploadedBytes / (1024 * 1024)).toFixed(1);
+            const totalMbFormatted = (file.size / (1024 * 1024)).toFixed(1);
             setUploadSizeText(`${loadedMb} MB / ${totalMbFormatted} MB`);
 
             const elapsedSec = (Date.now() - uploadStartTime) / 1000;
-            if (elapsedSec > 0.5 && loaded > 0) {
-              const bytesPerSec = loaded / elapsedSec;
+            if (elapsedSec > 0.5 && uploadedBytes > 0) {
+              const bytesPerSec = uploadedBytes / elapsedSec;
               const mbPerSec = (bytesPerSec / (1024 * 1024)).toFixed(1);
               setUploadSpeed(`${mbPerSec} MB/s`);
 
-              const remainingBytes = total - loaded;
+              const remainingBytes = file.size - uploadedBytes;
               const remainingSec = Math.round(remainingBytes / bytesPerSec);
               if (remainingSec < 60) {
                 setUploadEta(`~${remainingSec}s বাকি`);
@@ -141,37 +214,100 @@ export const MediaQrManager: React.FC = () => {
               }
             }
           }
-        };
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const resJson = JSON.parse(xhr.responseText);
-              setUploadProgress(100);
-              resolve(resJson);
-            } catch (parseErr) {
-              reject(new Error('Invalid server response'));
-            }
-          } else {
-            let errorMsg = `Upload failed (${xhr.status})`;
-            try {
-              const resJson = JSON.parse(xhr.responseText);
-              if (resJson.error) errorMsg = resJson.error;
-            } catch {}
-            reject(new Error(errorMsg));
+          // 3. Complete Multipart Upload
+          const completeRes = await fetch('/api/upload/chunk/complete', {
+            method: 'POST',
+            headers: {
+              ...authHeaders,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              uploadId,
+              key,
+              parts,
+              filename
+            })
+          });
+
+          if (!completeRes.ok) {
+            throw new Error(`Failed to finalize uploaded video (${completeRes.status})`);
           }
-        };
 
-        xhr.onerror = () => {
-          reject(new Error('Network error during upload. Please check connection.'));
-        };
+          setUploadProgress(100);
+          return await completeRes.json();
+        })();
+      } else {
+        // Standard fast streaming upload for files < 25MB
+        data = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/upload', true);
 
-        xhr.ontimeout = () => {
-          reject(new Error('Upload timed out.'));
-        };
+          // Set auth headers
+          Object.entries(authHeaders).forEach(([k, v]) => {
+            if (v) xhr.setRequestHeader(k, String(v));
+          });
 
-        xhr.send(formData);
-      });
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const loaded = event.loaded;
+              const total = event.total;
+              const percent = Math.min(99, Math.round((loaded / total) * 100));
+              setUploadProgress(percent);
+
+              const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
+              const totalMbFormatted = (total / (1024 * 1024)).toFixed(1);
+              setUploadSizeText(`${loadedMb} MB / ${totalMbFormatted} MB`);
+
+              const elapsedSec = (Date.now() - uploadStartTime) / 1000;
+              if (elapsedSec > 0.5 && loaded > 0) {
+                const bytesPerSec = loaded / elapsedSec;
+                const mbPerSec = (bytesPerSec / (1024 * 1024)).toFixed(1);
+                setUploadSpeed(`${mbPerSec} MB/s`);
+
+                const remainingBytes = total - loaded;
+                const remainingSec = Math.round(remainingBytes / bytesPerSec);
+                if (remainingSec < 60) {
+                  setUploadEta(`~${remainingSec}s বাকি`);
+                } else {
+                  const mins = Math.floor(remainingSec / 60);
+                  const secs = remainingSec % 60;
+                  setUploadEta(`~${mins}m ${secs}s বাকি`);
+                }
+              }
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const resJson = JSON.parse(xhr.responseText);
+                setUploadProgress(100);
+                resolve(resJson);
+              } catch {
+                reject(new Error('Invalid server response'));
+              }
+            } else {
+              let errorMsg = `Upload failed (${xhr.status})`;
+              try {
+                const resJson = JSON.parse(xhr.responseText);
+                if (resJson.error) errorMsg = resJson.error;
+              } catch {}
+              reject(new Error(errorMsg));
+            }
+          };
+
+          xhr.onerror = () => {
+            reject(new Error('Network error during upload. Please check connection.'));
+          };
+
+          xhr.ontimeout = () => {
+            reject(new Error('Upload timed out.'));
+          };
+
+          xhr.send(formData);
+        });
+      }
       
       const fileUrl = data.url || (data.filename ? `/uploads/${data.filename}` : '');
       setMediaUrl(fileUrl);

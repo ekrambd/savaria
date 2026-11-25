@@ -15,6 +15,12 @@ import { storeProducts, loadSettingsFromDisk } from "./src/server/data/store";
 
 const httpServer = http.createServer(app);
 
+// Configure high timeouts for large file uploads & slow network connections
+httpServer.timeout = 1800000;         // 30 minutes
+httpServer.keepAliveTimeout = 120000;  // 2 minutes
+httpServer.headersTimeout = 125000;    // Slightly higher than keepAliveTimeout
+httpServer.requestTimeout = 1800000;   // 30 minutes (Node 14+)
+
 function injectServerMeta(html: string, reqPath: string, host: string, proto: string): string {
   const settings = loadSettingsFromDisk();
   const storeName = settings?.storeName || settings?.headerSettings?.brandName || "Store";
