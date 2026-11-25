@@ -766,7 +766,6 @@ export const MediaQrManager: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
       {/* ============================================================
           CREATE / EDIT QR CODE MODAL DIALOG
